@@ -207,12 +207,34 @@ class RMPBackgroundService {
   async fetchProfessorRating(instructorName, department = null) {
     console.log(`Fetching rating for ${instructorName} (Department: ${department})`);
     
+    // Special debugging for Simons,J.
+    if (instructorName === "Simons,J.") {
+      console.log(`🚨 DEBUGGING SIMONS,J. - Starting fetch process`);
+    }
+    
+    // Special debugging for Fehren-Schmitz,L.
+    if (instructorName === "Fehren-Schmitz,L.") {
+      console.log(`🚨 DEBUGGING FEHREN-SCHMITZ,L. - Starting fetch process`);
+    }
+    
     try {
       // Check manual name mapping first (highest priority)
       const mappedName = this.checkNameMapping(instructorName);
       if (mappedName) {
         console.log(`📋 Found manual mapping: "${instructorName}" → "${mappedName}"`);
+        if (instructorName === "Simons,J.") {
+          console.log(`🚨 SIMONS,J. MAPPED TO: "${mappedName}"`);
+        }
+        if (instructorName === "Fehren-Schmitz,L.") {
+          console.log(`🚨 FEHREN-SCHMITZ,L. MAPPED TO: "${mappedName}"`);
+        }
         return await this.searchByExactName(mappedName, instructorName);
+      } else if (instructorName === "Simons,J.") {
+        console.log(`🚨 SIMONS,J. NOT FOUND IN MAPPING!`);
+        console.log(`🚨 Available mappings:`, Object.keys(this.checkNameMapping.toString().match(/\"([^\"]+)\"/g) || []));
+      } else if (instructorName === "Fehren-Schmitz,L.") {
+        console.log(`🚨 FEHREN-SCHMITZ,L. NOT FOUND IN MAPPING!`);
+        console.log(`🚨 Available mappings:`, Object.keys(this.checkNameMapping.toString().match(/\"([^\"]+)\"/g) || []));
       }
       
       // Normalize instructor name for search
@@ -369,11 +391,15 @@ class RMPBackgroundService {
       // "UCSC_Format": "RMP_Full_Name"  (searches by name)
       // "UCSC_Format": "ID:12345"       (direct RMP professor ID)
       "Berrahmoun,A.": "Abdelkader Berrahmoun",
-      "Hibbert-Jones,W.D.": "Dee Hibbert-Jones", 
+      "Hibbert-Jones,W.D.": "Dee Hibbert-Jones",
+      "Hernandez Garavito,C.": "Carla Hernandez Garavito",
       "Mascarenhas Menna Barreto,J.": "Jorge Barreto",
+      "Shange-Binion,S.T.": "Savannah Shange",
       
       // Test with some variations in case exact names don't match:
-      "Simons,J.": "Jonathan Simons",
+      "Simons,J.": "Julie Simons",
+      "Fehren-Schmitz,L.": "Lars Fehren-Schmitz",
+      
       
       // Example of direct ID mapping (more reliable):
       // "Smith,J.": "ID:2367890",
@@ -388,9 +414,27 @@ class RMPBackgroundService {
   async searchByExactName(fullName, originalInstructorName) {
     console.log(`🎯 Searching for exact mapped name: "${fullName}"`);
     
+    // Special debugging for Simons,J.
+    if (originalInstructorName === "Simons,J.") {
+      console.log(`🚨 SIMONS,J. - Searching RMP for: "${fullName}"`);
+    }
+    
+    // Special debugging for Fehren-Schmitz,L.
+    if (originalInstructorName === "Fehren-Schmitz,L.") {
+      console.log(`🚨 FEHREN-SCHMITZ,L. - Searching RMP for: "${fullName}"`);
+    }
+    
     try {
       // Search using the exact full name
       const results = await this.searchProfessor(fullName);
+      
+      if (originalInstructorName === "Simons,J.") {
+        console.log(`🚨 SIMONS,J. - RMP Search Results:`, results.length, results);
+      }
+      
+      if (originalInstructorName === "Fehren-Schmitz,L.") {
+        console.log(`🚨 FEHREN-SCHMITZ,L. - RMP Search Results:`, results.length, results);
+      }
       
       if (results.length > 0) {
         // Find the best match (should be exact since we have the full name)

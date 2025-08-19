@@ -449,6 +449,18 @@ class UCSCRMPExtension {
       return 0;
     }
     
+    // Debug: Show ALL extracted instructor names first
+    console.log(`🚨 DEBUG: Extracting ALL instructor names from ${courseRows.length} rows:`);
+    courseRows.forEach((row, index) => {
+      const name = this.extractInstructorName(row);
+      if (name) {
+        console.log(`  Row ${index + 1}: "${name}"`);
+        if (name.toLowerCase().includes("simons")) {
+          console.log(`    🚨 FOUND SIMONS IN ROW ${index + 1}!`);
+        }
+      }
+    });
+    
     courseRows.forEach((row, index) => {
       console.log(`📋 Processing row ${index + 1}:`, row);
       
@@ -459,6 +471,18 @@ class UCSCRMPExtension {
 
       const instructorName = this.extractInstructorName(row);
       console.log(`👨‍🏫 Extracted instructor name from row ${index + 1}:`, instructorName);
+      
+      // Special debugging for Simons,J.
+      if (instructorName && instructorName.includes("Simons")) {
+        console.log(`🚨 FOUND SIMONS! Extracted name: "${instructorName}"`);
+        console.log(`🚨 Exact match check: "${instructorName}" === "Simons,J." is`, instructorName === "Simons,J.");
+      }
+      
+      // Special debugging for Fehren-Schmitz,L.
+      if (instructorName && instructorName.includes("Fehren")) {
+        console.log(`🚨 FOUND FEHREN! Extracted name: "${instructorName}"`);
+        console.log(`🚨 Exact match check: "${instructorName}" === "Fehren-Schmitz,L." is`, instructorName === "Fehren-Schmitz,L.");
+      }
       
       if (instructorName && instructorName !== 'STAFF/TBA') {
         console.log(`✅ Processing instructor: ${instructorName}`);
@@ -493,8 +517,8 @@ class UCSCRMPExtension {
     }
     
     // Also check all text content for department patterns
-    const rowText = row.textContent;
-    const deptMatch = rowText.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
+    const departmentRowText = row.textContent;
+    const deptMatch = departmentRowText.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
     if (deptMatch) {
       console.log(`🏫 Found department from row text: ${deptMatch[1]}`);
       return deptMatch[1];
@@ -505,6 +529,26 @@ class UCSCRMPExtension {
   }
 
   extractInstructorName(row) {
+    // First, check if this row contains any manually mapped instructor names
+    // This bypasses parsing issues for complex names
+    const manualMappingNames = [
+      "Berrahmoun,A.",
+      "Hibbert-Jones,W.D.",
+      "Hernandez Garavito,C.",
+      "Mascarenhas Menna Barreto,J.",
+      "Simons,J.",
+      "Fehren-Schmitz,L.",
+      "Shange-Binion,S.T.",
+    ];
+    
+    const rowText = row.textContent || row.innerText || '';
+    for (const mappedName of manualMappingNames) {
+      if (rowText.includes(mappedName)) {
+        console.log(`🎯 Found manually mapped instructor: ${mappedName} (bypassing parsing)`);
+        return mappedName;
+      }
+    }
+    
     // Look for instructor information in Bootstrap column elements
     const instructorElements = row.querySelectorAll('div.col-xs-6.col-sm-3');
     console.log(`🔍 Found ${instructorElements.length} Bootstrap column elements`);
@@ -519,9 +563,9 @@ class UCSCRMPExtension {
         
         // Extract instructor name using patterns
         const namePatterns = [
-          /([A-Z][a-z]+,[A-Z]\.?)/g, // "Simons,J."
-          /([A-Z][a-z]+,\s*[A-Z]\.?)/g, // "Simons, J."
-          /([A-Z][A-Z]+,[A-Z]\.?)/g, // "SMITH,J."
+          /([A-Z][a-z-]+,[A-Z]\.?)/g, // "Fehren-Schmitz,L." or "Simons,J."
+          /([A-Z][a-z-]+,\s*[A-Z]\.?)/g, // "Fehren-Schmitz, L." or "Simons, J."
+          /([A-Z][A-Z-]+,[A-Z]\.?)/g, // "FEHREN-SCHMITZ,L." or "SMITH,J."
         ];
         
         for (const pattern of namePatterns) {
@@ -544,12 +588,11 @@ class UCSCRMPExtension {
     }
     
     // Fallback: search entire row text for instructor names
-    const rowText = row.textContent || row.innerText || '';
     console.log(`📝 Fallback: searching entire row text: "${rowText.substring(0, 100)}..."`);
     
     const namePatterns = [
-      /([A-Z][a-z]+,[A-Z]\.?)/g, // "Simons,J."
-      /([A-Z][a-z]+,\s*[A-Z]\.?)/g, // "Simons, J."
+      /([A-Z][a-z-]+,[A-Z]\.?)/g, // "Fehren-Schmitz,L." or "Simons,J."
+      /([A-Z][a-z-]+,\s*[A-Z]\.?)/g, // "Fehren-Schmitz, L." or "Simons, J."
     ];
     
     for (const pattern of namePatterns) {
