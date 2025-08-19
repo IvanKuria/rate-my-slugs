@@ -643,14 +643,35 @@ class UCSCRMPExtension {
       // Generate star display for rating
       const stars = '★'.repeat(Math.round(rating.overallRating)) + '☆'.repeat(5 - Math.round(rating.overallRating));
       
+      // Determine color class for overall rating (higher = better = greener)
+      const getRatingColorClass = (value) => {
+        if (value >= 4.5) return 'rmp-rating-excellent';
+        if (value >= 4.0) return 'rmp-rating-good';
+        if (value >= 3.0) return 'rmp-rating-average';
+        if (value >= 2.0) return 'rmp-rating-poor';
+        return 'rmp-rating-bad';
+      };
+      
+      // Determine color class for difficulty (higher = harder = redder)
+      const getDifficultyColorClass = (value) => {
+        if (value >= 4.5) return 'rmp-difficulty-very-hard';
+        if (value >= 4.0) return 'rmp-difficulty-hard';
+        if (value >= 3.0) return 'rmp-difficulty-average';
+        if (value >= 2.0) return 'rmp-difficulty-moderate';
+        return 'rmp-difficulty-easy';
+      };
+      
+      const ratingClass = getRatingColorClass(rating.overallRating);
+      const difficultyClass = getDifficultyColorClass(rating.difficulty);
+      
       content.innerHTML = `
         <span class="rmp-inline">
           <span class="rmp-label">Rate My Professors:</span>
-          <span class="rmp-rating-value"><span class="rmp-star">${stars}</span> ${rating.overallRating}/5</span>
-          <span class="rmp-rating-value">Difficulty: ${rating.difficulty}/5</span>
+          <span class="rmp-rating-value ${ratingClass}"><span class="rmp-star">${stars}</span> ${rating.overallRating}/5</span>
+          <span class="rmp-rating-value">Difficulty: <span class="${difficultyClass}">${rating.difficulty}/5</span></span>
           <span class="rmp-rating-value">${rating.wouldTakeAgainPercent}% would take again</span>
           <span class="rmp-rating-value">(${rating.numRatings} reviews)</span>
-          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">View Profile</a>
+          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">View Profile ↗</a>
         </span>
       `;
     } else if (data.status === 'no-profile') {

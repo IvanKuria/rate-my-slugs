@@ -7,7 +7,7 @@
   background: transparent;
   border: none;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: #333;
 }
@@ -22,13 +22,13 @@
   display: inline-block;
   margin-left: 20px;
   color: #666 !important;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: normal;
 }
 
 .rmp-label {
   color: #666 !important;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: normal;
   margin-right: 4px;
 }
@@ -36,26 +36,59 @@
 .rmp-values {
   display: inline;
   color: #333 !important;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .rmp-rating-value {
   color: #0645AD !important;
   font-weight: 500;
   margin-right: 8px;
+  font-size: 13px;
 }
 
+/* Dynamic color coding for ratings and difficulty */
+.rmp-rating-excellent { color: #228B22 !important; } /* High rating (4.5-5.0) - Green */
+.rmp-rating-good { color: #32CD32 !important; }      /* Good rating (4.0-4.4) - Light Green */
+.rmp-rating-average { color: #FFD700 !important; }   /* Average rating (3.0-3.9) - Gold */
+.rmp-rating-poor { color: #FF6347 !important; }      /* Poor rating (2.0-2.9) - Tomato */
+.rmp-rating-bad { color: #DC143C !important; }       /* Bad rating (0-1.9) - Crimson */
+
+.rmp-difficulty-easy { color: #228B22 !important; }     /* Easy difficulty (0-1.9) - Green */
+.rmp-difficulty-moderate { color: #32CD32 !important; } /* Moderate difficulty (2.0-2.9) - Light Green */
+.rmp-difficulty-average { color: #FFD700 !important; }  /* Average difficulty (3.0-3.9) - Gold */
+.rmp-difficulty-hard { color: #FF6347 !important; }     /* Hard difficulty (4.0-4.4) - Tomato */
+.rmp-difficulty-very-hard { color: #DC143C !important; }/* Very hard difficulty (4.5-5.0) - Crimson */
+
 .rmp-link {
-  color: #0645AD !important;
-  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0645AD 0%, #0856d6 100%);
+  text-decoration: none;
   font-size: 12px;
-  font-weight: normal;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
   margin-left: 8px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(6, 69, 173, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  letter-spacing: 0.025em;
 }
 
 .rmp-link:hover {
-  color: #004499 !important;
-  text-decoration: underline;
+  background: linear-gradient(135deg, #0856d6 0%, #0645AD 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(6, 69, 173, 0.3);
+  text-decoration: none;
+  color: #ffffff !important;
+}
+
+.rmp-link:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(6, 69, 173, 0.3);
 }
 
 /* Loading, error, and no-profile states */
@@ -63,7 +96,7 @@
 .rmp-error,
 .rmp-no-profile {
   color: #999 !important;
-  font-size: 12px;
+  font-size: 13px;
   font-style: italic;
   margin-left: 20px;
 }
