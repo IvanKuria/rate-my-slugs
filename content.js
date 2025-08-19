@@ -452,7 +452,12 @@ class UCSCRMPExtension {
       
       if (instructorName && instructorName !== 'STAFF/TBA') {
         console.log(`✅ Processing instructor: ${instructorName}`);
-        this.processInstructor(row, instructorName);
+        
+        // Extract course department for context
+        const department = this.extractCourseDepartment(row);
+        console.log(`🏫 Extracted department: ${department}`);
+        
+        this.processInstructor(row, instructorName, department);
         this.processedRows.add(row);
       } else {
         console.log(`❌ Skipping row ${index + 1}: no valid instructor name`);
@@ -460,6 +465,33 @@ class UCSCRMPExtension {
     });
     
     return courseRows.length;
+  }
+
+  extractCourseDepartment(row) {
+    // Look for course title/department in the row
+    // Course titles are usually in format "AM 11B - 01 Math Methods Econ II"
+    const titleElements = row.querySelectorAll('h3, h2, .course-title, [class*="title"]');
+    
+    for (const element of titleElements) {
+      const text = element.textContent.trim();
+      // Match patterns like "AM 11B", "ECON 100A", "PHYS 5A", etc.
+      const deptMatch = text.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
+      if (deptMatch) {
+        console.log(`🏫 Found department from title: ${deptMatch[1]}`);
+        return deptMatch[1];
+      }
+    }
+    
+    // Also check all text content for department patterns
+    const rowText = row.textContent;
+    const deptMatch = rowText.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
+    if (deptMatch) {
+      console.log(`🏫 Found department from row text: ${deptMatch[1]}`);
+      return deptMatch[1];
+    }
+    
+    console.log(`🏫 No department found in row`);
+    return null;
   }
 
   extractInstructorName(row) {
@@ -533,7 +565,7 @@ class UCSCRMPExtension {
     return null;
   }
 
-  async processInstructor(row, instructorName) {
+  async processInstructor(row, instructorName, department = null) {
     // Check if we already have a rating card
     if (row.querySelector('.rmp-rating-card')) {
       return;
@@ -544,11 +576,12 @@ class UCSCRMPExtension {
     row.appendChild(loadingCard);
 
     try {
-      console.log(`📤 Sending message to background script for: ${instructorName}`);
+      console.log(`📤 Sending message to background script for: ${instructorName} (Department: ${department})`);
       // Request rating from background script
       const response = await chrome.runtime.sendMessage({
         action: 'getProfessorRating',
-        instructorName: instructorName
+        instructorName: instructorName,
+        department: department
       });
       
       console.log(`📥 Received response from background script:`, response);

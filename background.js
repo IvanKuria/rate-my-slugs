@@ -77,11 +77,11 @@ class RMPBackgroundService {
   }
 
   async handleProfessorRatingRequest(request, sender, sendResponse) {
-    const { instructorName } = request;
+    const { instructorName, department } = request;
     
     try {
-      console.log(`⚡ NO CACHING - fetching fresh data for ${instructorName}`);
-      const result = await this.fetchProfessorRating(instructorName);
+      console.log(`⚡ NO CACHING - fetching fresh data for ${instructorName} (Department: ${department})`);
+      const result = await this.fetchProfessorRating(instructorName, department);
       sendResponse(result);
     } catch (error) {
       console.error('Error handling professor rating request:', error);
@@ -131,8 +131,8 @@ class RMPBackgroundService {
     }
   }
 
-  async fetchProfessorRating(instructorName) {
-    console.log(`Fetching rating for ${instructorName}`);
+  async fetchProfessorRating(instructorName, department = null) {
+    console.log(`Fetching rating for ${instructorName} (Department: ${department})`);
     
     try {
       // Normalize instructor name for search
@@ -149,33 +149,45 @@ class RMPBackgroundService {
         if (results.length > 0) {
           console.log(`🔍 Found ${results.length} professors total for search: "${searchString}"`);
           
+          // If department is provided, filter by department context first
+          let filteredResults = results;
+          if (department) {
+            const departmentMatches = this.filterByDepartmentContext(results, department);
+            if (departmentMatches.length > 0) {
+              console.log(`🏫 Found ${departmentMatches.length} professors with ${department} department context`);
+              filteredResults = departmentMatches;
+            } else {
+              console.log(`🏫 No professors found with ${department} context, using all results`);
+            }
+          }
+          
           // First, try to find exact matches
-          const exactMatches = results.filter(professor => {
+          const exactMatches = filteredResults.filter(professor => {
             const fullName = `${professor.firstName} ${professor.lastName}`;
             return fullName.toLowerCase() === normalizedName.toLowerCase();
           });
           
           if (exactMatches.length > 0) {
-            console.log(`🎯 Found exact match for "${instructorName}"`);
+            console.log(`🎯 Found exact match for "${instructorName}" ${department ? `in ${department}` : ''}`);
             searchResult = exactMatches;
             break;
           }
           
           // If no exact match, try close matches
-          const closeMatches = results.filter(professor => {
+          const closeMatches = filteredResults.filter(professor => {
             const fullName = `${professor.firstName} ${professor.lastName}`;
             return this.isCloseEnough(fullName.toLowerCase(), normalizedName.toLowerCase());
           });
           
           if (closeMatches.length > 0) {
-            console.log(`🔍 Found close match for "${instructorName}"`);
+            console.log(`🔍 Found close match for "${instructorName}" ${department ? `in ${department}` : ''}`);
             searchResult = closeMatches;
             break;
           }
           
           // If still no matches, just take the first result as a fallback
           console.log(`🔄 No name matches found, using first result for "${instructorName}"`);
-          searchResult = [results[0]];
+          searchResult = [filteredResults[0]];
           break;
         }
       }
@@ -280,6 +292,58 @@ class RMPBackgroundService {
     
     console.log(`🔍 Created search strings for "${firstName} ${lastName}":`, searchStrings);
     return searchStrings;
+  }
+
+  filterByDepartmentContext(professors, department) {
+    // Map UCSC departments to related RMP course subjects/tags
+    const departmentMappings = {
+      'AM': ['applied mathematics', 'mathematics', 'math', 'applied math'],
+      'ECON': ['economics', 'econ', 'business'],
+      'PHYS': ['physics', 'physical science'],
+      'CHEM': ['chemistry', 'chemical'],
+      'BIOL': ['biology', 'biological', 'life science'],
+      'PSYC': ['psychology', 'psych'],
+      'HIST': ['history', 'historical'],
+      'ENGL': ['english', 'literature', 'writing'],
+      'CMPS': ['computer science', 'programming', 'computing'],
+      'MATH': ['mathematics', 'math', 'calculus', 'algebra'],
+      'ART': ['art', 'arts', 'visual arts'],
+      'MUS': ['music', 'musical'],
+      'THEA': ['theater', 'theatre', 'drama'],
+      'POLI': ['political science', 'politics', 'government'],
+      'ANTH': ['anthropology', 'cultural'],
+      'SOCY': ['sociology', 'social science']
+    };
+
+    const relatedTerms = departmentMappings[department] || [department.toLowerCase()];
+    console.log(`🏫 Looking for professors related to ${department}: ${relatedTerms.join(', ')}`);
+
+    // Filter professors whose teaching tags or reviews mention related terms
+    return professors.filter(professor => {
+      // Check rating tags
+      if (professor.teacherRatingTags) {
+        for (const tag of professor.teacherRatingTags) {
+          if (tag.tagName) {
+            const tagName = tag.tagName.toLowerCase();
+            if (relatedTerms.some(term => tagName.includes(term))) {
+              console.log(`🏷️ Professor ${professor.firstName} ${professor.lastName} has relevant tag: ${tag.tagName}`);
+              return true;
+            }
+          }
+        }
+      }
+
+      // Check most useful rating content
+      if (professor.mostUsefulRating && professor.mostUsefulRating.class) {
+        const className = professor.mostUsefulRating.class.toLowerCase();
+        if (relatedTerms.some(term => className.includes(term))) {
+          console.log(`📚 Professor ${professor.firstName} ${professor.lastName} teaches relevant class: ${professor.mostUsefulRating.class}`);
+          return true;
+        }
+      }
+
+      return false;
+    });
   }
 
   isCloseEnough(a, b) {
