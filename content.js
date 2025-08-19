@@ -67,6 +67,16 @@ class UCSCRMPExtension {
              });
            };
 
+           window.ucscRMPTestMapping = function(name) {
+             console.log(`🧪 Testing mapping for: "${name}"`);
+             chrome.runtime.sendMessage({ 
+               action: 'testMapping', 
+               instructorName: name 
+             }).then(result => {
+               console.log(`🧪 Test result:`, result);
+             });
+           };
+
            window.ucscRMPClearCache = function() {
              console.log('🧹 Clearing all cache');
              chrome.runtime.sendMessage({
@@ -606,36 +616,16 @@ class UCSCRMPExtension {
 
     switch (status) {
       case 'loading':
-        content.innerHTML = `
-          <div class="rmp-header">
-            <span class="rmp-title">Rate My Professors</span>
-            <span class="rmp-loading">Loading ratings...</span>
-          </div>
-        `;
+        content.innerHTML = `<span class="rmp-loading">Rate My Professors: Loading...</span>`;
         break;
       case 'success':
-        content.innerHTML = `
-          <div class="rmp-header">
-            <span class="rmp-title">Rate My Professors</span>
-            <span class="rmp-instructor">${instructorName}</span>
-          </div>
-        `;
+        content.innerHTML = `<span class="rmp-inline">Rate My Professors: <span class="rmp-values">Loading data...</span></span>`;
         break;
       case 'error':
-        content.innerHTML = `
-          <div class="rmp-header">
-            <span class="rmp-title">Rate My Professors</span>
-            <span class="rmp-error">Unable to load ratings</span>
-          </div>
-        `;
+        content.innerHTML = `<span class="rmp-error">Rate My Professors: Unable to load ratings</span>`;
         break;
       case 'no-profile':
-        content.innerHTML = `
-          <div class="rmp-header">
-            <span class="rmp-title">Rate My Professors</span>
-            <span class="rmp-no-profile">No ratings found</span>
-          </div>
-        `;
+        content.innerHTML = `<span class="rmp-no-profile">Rate My Professors: No ratings found</span>`;
         break;
     }
 
@@ -649,51 +639,24 @@ class UCSCRMPExtension {
 
     if (data.status === 'success' && data.rating) {
       const rating = data.rating;
+      
+      // Generate star display for rating
+      const stars = '★'.repeat(Math.round(rating.overallRating)) + '☆'.repeat(5 - Math.round(rating.overallRating));
+      
       content.innerHTML = `
-        <div class="rmp-header">
-          <span class="rmp-title">Rate My Professors</span>
-          <span class="rmp-instructor">${data.instructorName}</span>
-        </div>
-        <div class="rmp-stats">
-          <div class="rmp-stat">
-            <span class="rmp-label">Overall Rating</span>
-            <span class="rmp-value rmp-rating">${rating.overallRating}/5.0</span>
-          </div>
-          <div class="rmp-stat">
-            <span class="rmp-label">Difficulty</span>
-            <span class="rmp-value rmp-difficulty">${rating.difficulty}/5.0</span>
-          </div>
-          <div class="rmp-stat">
-            <span class="rmp-label">Would Take Again</span>
-            <span class="rmp-value rmp-take-again">${rating.wouldTakeAgainPercent}%</span>
-          </div>
-          <div class="rmp-stat">
-            <span class="rmp-label">Total Reviews</span>
-            <span class="rmp-value rmp-count">${rating.numRatings}</span>
-          </div>
-        </div>
-        <div class="rmp-footer">
-          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">
-            View Full Profile →
-          </a>
-        </div>
+        <span class="rmp-inline">
+          <span class="rmp-label">Rate My Professors:</span>
+          <span class="rmp-rating-value"><span class="rmp-star">${stars}</span> ${rating.overallRating}/5</span>
+          <span class="rmp-rating-value">Difficulty: ${rating.difficulty}/5</span>
+          <span class="rmp-rating-value">${rating.wouldTakeAgainPercent}% would take again</span>
+          <span class="rmp-rating-value">(${rating.numRatings} reviews)</span>
+          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">View Profile</a>
+        </span>
       `;
     } else if (data.status === 'no-profile') {
-      content.innerHTML = `
-        <div class="rmp-header">
-          <span class="rmp-title">Rate My Professors</span>
-          <span class="rmp-instructor">${data.instructorName}</span>
-        </div>
-        <div class="rmp-message">No ratings found</div>
-      `;
+      content.innerHTML = `<span class="rmp-no-profile">Rate My Professors: No ratings found</span>`;
     } else if (data.status === 'error') {
-      content.innerHTML = `
-        <div class="rmp-header">
-          <span class="rmp-title">Rate My Professors</span>
-          <span class="rmp-instructor">${data.instructorName}</span>
-        </div>
-        <div class="rmp-message">Unable to load ratings</div>
-      `;
+      content.innerHTML = `<span class="rmp-error">Rate My Professors: Unable to load ratings</span>`;
     }
   }
 }

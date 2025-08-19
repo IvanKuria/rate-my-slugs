@@ -1,0 +1,10 @@
+{
+  "mappings": {
+    "Berrahmoun,A.": "Abdelkader Berrahmoun",
+    "Hibbert-Jones,W.D.": "Dee Hibbert-Jones",
+    "Mascarenhas Menna Barreto,J.": "Jorge Barreto",
+    "Simons,J.": "Jonathan Simons"
+  },
+  "instructions": "Add new mappings in the format: 'UCSC_Name': 'RMP_Full_Name'"
+}
+

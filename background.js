@@ -31,6 +31,10 @@ class RMPBackgroundService {
         console.log(`🔄 Refreshing data for: ${request.instructorName}`);
         this.handleRefreshProfessorRequest(request, sender, sendResponse);
         return true;
+      } else if (request.action === 'testMapping') {
+        console.log(`🧪 Testing mapping for: ${request.instructorName}`);
+        this.handleTestMappingRequest(request, sender, sendResponse);
+        return true;
       }
 
       console.log('❌ Unknown message action:', request.action);
@@ -71,6 +75,75 @@ class RMPBackgroundService {
       sendResponse({
         status: 'error',
         instructorName: instructorName,
+        error: error.message
+      });
+    }
+  }
+
+  async handleTestMappingRequest(request, sender, sendResponse) {
+    try {
+      console.log(`🧪 Testing mapping for: "${request.instructorName}"`);
+      
+      // Check if manual mapping exists
+      const mappedName = this.checkNameMapping(request.instructorName);
+      
+      if (mappedName) {
+        console.log(`✅ Found mapping: "${request.instructorName}" → "${mappedName}"`);
+        
+        // Test search using the mapped name
+        const searchResults = await this.searchProfessor(mappedName);
+        console.log(`🔍 Search results for "${mappedName}":`, searchResults.length);
+        
+        if (searchResults.length > 0) {
+          const exactMatch = searchResults.find(professor => {
+            const professorFullName = `${professor.firstName} ${professor.lastName}`;
+            return professorFullName.toLowerCase() === mappedName.toLowerCase();
+          });
+          
+          if (exactMatch) {
+            console.log(`🎯 Found exact match: ${exactMatch.firstName} ${exactMatch.lastName}`);
+            sendResponse({
+              status: 'success',
+              mapping: `"${request.instructorName}" → "${mappedName}"`,
+              found: true,
+              professor: `${exactMatch.firstName} ${exactMatch.lastName}`,
+              ratings: {
+                overall: exactMatch.avgRatingRounded,
+                difficulty: exactMatch.avgDifficultyRounded,
+                wouldTakeAgain: exactMatch.wouldTakeAgainPercentRounded,
+                numRatings: exactMatch.numRatings
+              }
+            });
+          } else {
+            console.log(`❌ No exact match found for "${mappedName}"`);
+            sendResponse({
+              status: 'mapping_exists_no_match',
+              mapping: `"${request.instructorName}" → "${mappedName}"`,
+              found: false,
+              searchResultsCount: searchResults.length
+            });
+          }
+        } else {
+          console.log(`❌ No search results for "${mappedName}"`);
+          sendResponse({
+            status: 'mapping_exists_no_results',
+            mapping: `"${request.instructorName}" → "${mappedName}"`,
+            found: false
+          });
+        }
+      } else {
+        console.log(`❌ No mapping found for: "${request.instructorName}"`);
+        sendResponse({
+          status: 'no_mapping',
+          instructorName: request.instructorName,
+          found: false
+        });
+      }
+    } catch (error) {
+      console.error('Error testing mapping:', error);
+      sendResponse({
+        status: 'error',
+        instructorName: request.instructorName,
         error: error.message
       });
     }
@@ -135,6 +208,13 @@ class RMPBackgroundService {
     console.log(`Fetching rating for ${instructorName} (Department: ${department})`);
     
     try {
+      // Check manual name mapping first (highest priority)
+      const mappedName = this.checkNameMapping(instructorName);
+      if (mappedName) {
+        console.log(`📋 Found manual mapping: "${instructorName}" → "${mappedName}"`);
+        return await this.searchByExactName(mappedName, instructorName);
+      }
+      
       // Normalize instructor name for search
       const normalizedName = this.normalizeInstructorName(instructorName);
       
@@ -173,10 +253,34 @@ class RMPBackgroundService {
             break;
           }
           
-          // If no exact match, try close matches
+          // If no exact match, try initial-based matching (more strict for single letters)
+          const initialMatches = filteredResults.filter(professor => {
+            return this.matchesWithInitial(professor, normalizedName);
+          });
+          
+          if (initialMatches.length > 0) {
+            console.log(`🔤 Found initial-based match for "${instructorName}" ${department ? `in ${department}` : ''}`);
+            // Prefer professors with department context if available
+            if (department) {
+              const deptMatches = this.filterByDepartmentContext(initialMatches, department);
+              if (deptMatches.length > 0) {
+                searchResult = deptMatches;
+                console.log(`🏫 Prioritizing ${deptMatches.length} department matches over ${initialMatches.length} total matches`);
+              } else {
+                searchResult = initialMatches;
+              }
+            } else {
+              searchResult = initialMatches;
+            }
+            break;
+          }
+          
+          // If still no matches, try close matches (most permissive) but be more strict
           const closeMatches = filteredResults.filter(professor => {
             const fullName = `${professor.firstName} ${professor.lastName}`;
-            return this.isCloseEnough(fullName.toLowerCase(), normalizedName.toLowerCase());
+            const similarity = this.calculateSimilarity(fullName.toLowerCase(), normalizedName.toLowerCase());
+            // Only accept very close matches (similarity > 0.8)
+            return similarity > 0.8;
           });
           
           if (closeMatches.length > 0) {
@@ -185,10 +289,9 @@ class RMPBackgroundService {
             break;
           }
           
-          // If still no matches, just take the first result as a fallback
-          console.log(`🔄 No name matches found, using first result for "${instructorName}"`);
-          searchResult = [filteredResults[0]];
-          break;
+          // NO MORE FALLBACK TO RANDOM RESULTS
+          console.log(`❌ No valid matches found for "${instructorName}" - professor may not exist on RMP`);
+          // Continue to next search string instead of using random result
         }
       }
       
@@ -202,11 +305,21 @@ class RMPBackgroundService {
       }
 
       // Log all matches for debugging
-      console.log(`🔍 Found ${searchResult.length} UCSC professor matches for "${instructorName}":`);
+      console.log(`🔍 Found ${searchResult.length} professor matches for "${instructorName}":`);
       searchResult.forEach((prof, idx) => {
         const fullName = `${prof.firstName} ${prof.lastName}`;
-        const schoolName = prof.school ? prof.school.name : 'Unknown School';
-        console.log(`  ${idx + 1}. ${fullName} at ${schoolName} - Rating: ${prof.avgRatingRounded}, Difficulty: ${prof.avgDifficultyRounded}, Reviews: ${prof.numRatings}, Would Take Again: ${prof.wouldTakeAgainPercentRounded}%`);
+        console.log(`  ${idx + 1}. ${fullName} - Rating: ${prof.avgRatingRounded}, Difficulty: ${prof.avgDifficultyRounded}, Reviews: ${prof.numRatings}, Would Take Again: ${prof.wouldTakeAgainPercentRounded}%, ID: ${prof.legacyId}`);
+        
+        // Show top teaching tags for context
+        if (prof.teacherRatingTags && prof.teacherRatingTags.length > 0) {
+          const topTags = prof.teacherRatingTags.slice(0, 3).map(tag => tag.tagName).join(', ');
+          console.log(`    Tags: ${topTags}`);
+        }
+        
+        // Show recent class if available
+        if (prof.mostUsefulRating && prof.mostUsefulRating.class) {
+          console.log(`    Recent class: ${prof.mostUsefulRating.class}`);
+        }
       });
 
       // Get detailed rating for the first match
@@ -230,9 +343,9 @@ class RMPBackgroundService {
         rating: {
           overallRating: (professor.avgRatingRounded !== null && professor.avgRatingRounded !== undefined) ? Math.round(professor.avgRatingRounded * 10) / 10 : 'N/A',
           difficulty: (professor.avgDifficultyRounded !== null && professor.avgDifficultyRounded !== undefined) ? Math.round(professor.avgDifficultyRounded * 10) / 10 : 'N/A',
-          wouldTakeAgainPercent: (professor.wouldTakeAgainPercentRounded !== null && professor.wouldTakeAgainPercentRounded !== undefined && professor.wouldTakeAgainPercentRounded >= 0) ? Math.round(professor.wouldTakeAgainPercentRounded * 10) / 10 : 'N/A',
+          wouldTakeAgainPercent: (professor.wouldTakeAgainPercentRounded !== null && professor.wouldTakeAgainPercentRounded !== undefined && professor.wouldTakeAgainPercentRounded >= 0) ? Math.round(professor.wouldTakeAgainPercentRounded) : 'N/A',
           numRatings: professor.numRatings || 0,
-          rmpUrl: `https://www.ratemyprofessors.com/professor/${professor.id}`
+          rmpUrl: `https://www.ratemyprofessors.com/professor/${professor.legacyId}`
         }
       };
 
@@ -249,6 +362,99 @@ class RMPBackgroundService {
     }
   }
 
+  checkNameMapping(instructorName) {
+    // Manual mapping dictionary: UCSC name → RMP name OR RMP ID
+    const nameMapping = {
+      // Format options:
+      // "UCSC_Format": "RMP_Full_Name"  (searches by name)
+      // "UCSC_Format": "ID:12345"       (direct RMP professor ID)
+      "Berrahmoun,A.": "Abdelkader Berrahmoun",
+      "Hibbert-Jones,W.D.": "Dee Hibbert-Jones", 
+      "Mascarenhas Menna Barreto,J.": "Jorge Barreto",
+      
+      // Test with some variations in case exact names don't match:
+      "Simons,J.": "Jonathan Simons",
+      
+      // Example of direct ID mapping (more reliable):
+      // "Smith,J.": "ID:2367890",
+      
+      // Add more mappings as discovered:
+      // "Professor,X.": "Full Name on RMP",
+    };
+    
+    return nameMapping[instructorName] || null;
+  }
+
+  async searchByExactName(fullName, originalInstructorName) {
+    console.log(`🎯 Searching for exact mapped name: "${fullName}"`);
+    
+    try {
+      // Search using the exact full name
+      const results = await this.searchProfessor(fullName);
+      
+      if (results.length > 0) {
+        // Find the best match (should be exact since we have the full name)
+        const exactMatch = results.find(professor => {
+          const professorFullName = `${professor.firstName} ${professor.lastName}`;
+          return professorFullName.toLowerCase() === fullName.toLowerCase();
+        });
+        
+        if (exactMatch) {
+          console.log(`✅ Found exact match for mapped name: ${fullName}`);
+          
+          const result = {
+            status: 'success',
+            instructorName: originalInstructorName,
+            matchedName: fullName,
+            rating: {
+              overallRating: (exactMatch.avgRatingRounded !== null && exactMatch.avgRatingRounded !== undefined) ? Math.round(exactMatch.avgRatingRounded * 10) / 10 : 'N/A',
+              difficulty: (exactMatch.avgDifficultyRounded !== null && exactMatch.avgDifficultyRounded !== undefined) ? Math.round(exactMatch.avgDifficultyRounded * 10) / 10 : 'N/A',
+              wouldTakeAgainPercent: (exactMatch.wouldTakeAgainPercentRounded !== null && exactMatch.wouldTakeAgainPercentRounded !== undefined && exactMatch.wouldTakeAgainPercentRounded >= 0) ? Math.round(exactMatch.wouldTakeAgainPercentRounded) : 'N/A',
+              numRatings: exactMatch.numRatings || 0,
+              rmpUrl: `https://www.ratemyprofessors.com/professor/${exactMatch.legacyId}`
+            }
+          };
+          
+          console.log(`⚡ Skipping cache - returning fresh result for ${originalInstructorName}`);
+          return result;
+        }
+      }
+      
+      // If exact match not found, fall back to fuzzy matching
+      console.log(`🔍 Exact match not found, trying fuzzy match for: ${fullName}`);
+      const closeMatch = results.find(professor => {
+        const professorFullName = `${professor.firstName} ${professor.lastName}`;
+        return this.calculateSimilarity(professorFullName.toLowerCase(), fullName.toLowerCase()) > 0.8;
+      });
+      
+      if (closeMatch) {
+        console.log(`🔍 Found close match for mapped name: ${fullName}`);
+        const result = {
+          status: 'success',
+          instructorName: originalInstructorName,
+          matchedName: `${closeMatch.firstName} ${closeMatch.lastName}`,
+          rating: {
+            overallRating: (closeMatch.avgRatingRounded !== null && closeMatch.avgRatingRounded !== undefined) ? Math.round(closeMatch.avgRatingRounded * 10) / 10 : 'N/A',
+            difficulty: (closeMatch.avgDifficultyRounded !== null && closeMatch.avgDifficultyRounded !== undefined) ? Math.round(closeMatch.avgDifficultyRounded * 10) / 10 : 'N/A',
+            wouldTakeAgainPercent: (closeMatch.wouldTakeAgainPercentRounded !== null && closeMatch.wouldTakeAgainPercentRounded !== undefined && closeMatch.wouldTakeAgainPercentRounded >= 0) ? Math.round(closeMatch.wouldTakeAgainPercentRounded) : 'N/A',
+            numRatings: closeMatch.numRatings || 0,
+            rmpUrl: `https://www.ratemyprofessors.com/professor/${closeMatch.legacyId}`
+          }
+        };
+        return result;
+      }
+      
+    } catch (error) {
+      console.error(`Error searching for mapped name "${fullName}":`, error);
+    }
+    
+    // If mapped name search fails, return no-profile
+    return {
+      status: 'no-profile',
+      instructorName: originalInstructorName
+    };
+  }
+
   normalizeInstructorName(name) {
     // Convert "Last,First." format to "First Last" for RMP search
     // Handle patterns like "Simons,J." "Smith,A.B." "O'Connor,M." etc.
@@ -257,8 +463,18 @@ class RMPBackgroundService {
       const lastName = match[1];
       const firstInitials = match[2];
       
-      console.log(`📝 Normalizing "${name}" → "${firstInitials} ${lastName}"`);
-      return `${firstInitials} ${lastName}`;
+      // Clean up periods from initials for better processing
+      const cleanInitials = firstInitials.replace(/\./g, '');
+      
+      console.log(`📝 Normalizing "${name}" → "${cleanInitials} ${lastName}"`);
+      
+      // Special handling for common cases where initials don't match
+      // For "Lee,D." we need to ensure we search for "David Lee" not just "D Lee"
+      if (cleanInitials.length === 1) {
+        console.log(`📝 Single initial detected: "${cleanInitials}". Creating expanded search.`);
+      }
+      
+      return `${cleanInitials} ${lastName}`;
     }
     
     console.log(`📝 No normalization needed for "${name}"`);
@@ -271,27 +487,81 @@ class RMPBackgroundService {
     
     let searchStrings = [];
     
-    // Basic variations
+    // Start with the most conservative searches first
     searchStrings.push(`${lastName} ${firstName}`);
     searchStrings.push(`${firstName} ${lastName}`);
     
-    // If first name is an initial, try expanding search
+    // If first name is an initial, add initial-based searches
     if (firstName.length <= 2) {
       // Search with just the initial
       searchStrings.push(`${lastName} ${firstName.charAt(0)}`);
       searchStrings.push(`${firstName.charAt(0)} ${lastName}`);
-      
-      // Search with just last name (will be filtered by school)
-      searchStrings.push(lastName);
     }
     
-    // Also try the last name alone as a broader search
-    if (!searchStrings.includes(lastName)) {
-      searchStrings.push(lastName);
+    // Last name only (most permissive, will be filtered by initial matching)
+    searchStrings.push(lastName);
+    
+    // Only for very specific cases where we know expansions work well,
+    // add a few common names (but limit to top 2 to avoid false matches)
+    if (firstName.length === 1 && ['D', 'J', 'M', 'R', 'S'].includes(firstName.toUpperCase())) {
+      const commonNames = this.getTopNamesForInitial(firstName);
+      console.log(`🔤 Adding limited expansion for "${firstName}":`, commonNames);
+      
+      for (const commonName of commonNames.slice(0, 2)) { // Only top 2
+        searchStrings.push(`${commonName} ${lastName}`);
+      }
     }
     
     console.log(`🔍 Created search strings for "${firstName} ${lastName}":`, searchStrings);
     return searchStrings;
+  }
+
+  getTopNamesForInitial(initial) {
+    // Only the most common names to reduce false matches
+    const topNames = {
+      'D': ['David', 'Daniel'],
+      'J': ['John', 'James'], 
+      'M': ['Michael', 'Mark'],
+      'R': ['Robert', 'Richard'],
+      'S': ['Stephen', 'Steven']
+    };
+    
+    return topNames[initial.toUpperCase()] || [];
+  }
+
+
+
+  getCommonNamesForInitial(initial) {
+    const commonNames = {
+      'A': ['Andrew', 'Alexander', 'Anthony', 'Adam', 'Aaron', 'Albert', 'Alan'],
+      'B': ['Brian', 'Benjamin', 'Brad', 'Bruce', 'Brandon', 'Bill', 'Bob'],
+      'C': ['Christopher', 'Charles', 'Craig', 'Christian', 'Chris', 'Carl'],
+      'D': ['David', 'Daniel', 'Donald', 'Douglas', 'Dennis', 'Derek', 'Dean'],
+      'E': ['Edward', 'Eric', 'Ethan', 'Eugene', 'Evan', 'Edwin', 'Earl'],
+      'F': ['Frank', 'Frederick', 'Felix', 'Fernando', 'Francis', 'Fred'],
+      'G': ['George', 'Gary', 'Gregory', 'Gerald', 'Glenn', 'Gordon', 'Grant'],
+      'H': ['Henry', 'Harold', 'Howard', 'Hugh', 'Harry', 'Hans', 'Hector'],
+      'I': ['Ian', 'Isaac', 'Ivan', 'Irwin', 'Irving', 'Ismael'],
+      'J': ['John', 'James', 'Jason', 'Jeffrey', 'Jonathan', 'Joseph', 'Joshua'],
+      'K': ['Kevin', 'Kenneth', 'Keith', 'Kyle', 'Karl', 'Kurt', 'Kane'],
+      'L': ['Larry', 'Lawrence', 'Leonard', 'Louis', 'Luke', 'Luis', 'Lee'],
+      'M': ['Michael', 'Mark', 'Matthew', 'Martin', 'Manuel', 'Marcus', 'Mario'],
+      'N': ['Nicholas', 'Nathan', 'Neil', 'Norman', 'Nathaniel', 'Noah'],
+      'O': ['Oscar', 'Oliver', 'Owen', 'Omar', 'Otis', 'Orlando'],
+      'P': ['Paul', 'Peter', 'Patrick', 'Philip', 'Paul', 'Preston', 'Perry'],
+      'Q': ['Quinton', 'Quentin', 'Quinn'],
+      'R': ['Robert', 'Richard', 'Ronald', 'Roger', 'Ralph', 'Raymond', 'Ryan'],
+      'S': ['Stephen', 'Steven', 'Scott', 'Samuel', 'Sean', 'Simon', 'Stuart'],
+      'T': ['Thomas', 'Timothy', 'Tony', 'Terry', 'Todd', 'Travis', 'Tyler'],
+      'U': ['Ulysses', 'Umberto', 'Uri'],
+      'V': ['Victor', 'Vincent', 'Vernon', 'Vince', 'Virgil'],
+      'W': ['William', 'Walter', 'Wayne', 'Warren', 'Wesley', 'Wade'],
+      'X': ['Xavier', 'Xerxes'],
+      'Y': ['Yves', 'York', 'Yale'],
+      'Z': ['Zachary', 'Zane', 'Zack']
+    };
+    
+    return commonNames[initial.toUpperCase()] || [];
   }
 
   filterByDepartmentContext(professors, department) {
@@ -346,8 +616,47 @@ class RMPBackgroundService {
     });
   }
 
-  isCloseEnough(a, b) {
-    // Simple Levenshtein distance implementation for name matching
+  matchesWithInitial(professor, normalizedQuery) {
+    // Handle cases like "D Lee" should match "David Lee" but not "Juhee Lee"
+    const professorFullName = `${professor.firstName} ${professor.lastName}`.toLowerCase();
+    const queryParts = normalizedQuery.toLowerCase().split(' ');
+    const professorParts = professorFullName.split(' ');
+    
+    if (queryParts.length !== professorParts.length) {
+      return false;
+    }
+    
+    for (let i = 0; i < queryParts.length; i++) {
+      const queryPart = queryParts[i];
+      const professorPart = professorParts[i];
+      
+      // If query part is a single letter, check if it matches the first letter of professor part
+      if (queryPart.length === 1) {
+        if (professorPart.charAt(0) !== queryPart) {
+          return false;
+        }
+      } else {
+        // For multi-character parts, require exact match
+        if (queryPart !== professorPart) {
+          return false;
+        }
+      }
+    }
+    
+    console.log(`✅ Initial match: "${normalizedQuery}" matches "${professorFullName}"`);
+    return true;
+  }
+
+  calculateSimilarity(a, b) {
+    // Calculate similarity ratio (0 to 1, where 1 is perfect match)
+    const maxLength = Math.max(a.length, b.length);
+    if (maxLength === 0) return 1;
+    
+    const distance = this.levenshteinDistance(a, b);
+    return (maxLength - distance) / maxLength;
+  }
+
+  levenshteinDistance(a, b) {
     const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
 
     for (let i = 0; i <= a.length; i++) {
@@ -371,9 +680,12 @@ class RMPBackgroundService {
       }
     }
 
-    const distance = matrix[a.length][b.length];
-    const threshold = 3;
-    return distance <= threshold;
+    return matrix[a.length][b.length];
+  }
+
+  isCloseEnough(a, b) {
+    // Keep old function for backward compatibility, but make it stricter
+    return this.calculateSimilarity(a, b) > 0.7;
   }
 
   async searchProfessor(name) {

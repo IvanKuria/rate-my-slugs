@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { width: 400px; padding: 20px; font-family: system-ui; }
+    .mapping-form { margin-bottom: 20px; }
+    .mapping-list { max-height: 200px; overflow-y: auto; }
+    .mapping-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; }
+    button { padding: 8px 16px; margin: 4px; }
+    input { width: 150px; margin: 4px; padding: 4px; }
+  </style>
+</head>
+<body>
+  <h3>UCSC RMP Professor Mappings</h3>
+  
+  <div class="mapping-form">
+    <h4>Add New Mapping:</h4>
+    <input type="text" id="ucscName" placeholder="UCSC format (e.g., Smith,J.)" />
+    <input type="text" id="rmpName" placeholder="RMP full name" />
+    <button id="addMapping">Add Mapping</button>
+  </div>
+
+  <div class="mapping-list">
+    <h4>Current Mappings:</h4>
+    <div id="mappingsList"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
