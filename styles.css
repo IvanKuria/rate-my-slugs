@@ -1,0 +1,211 @@
+/* UCSC Rate My Professors Extension Styles */
+
+.rmp-rating-card {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  margin: 16px 0;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  max-width: 100%;
+}
+
+.rmp-rating-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-color: #0969da;
+}
+
+.rmp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rmp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.rmp-title {
+  font-weight: 700;
+  color: #0969da;
+  font-size: 16px;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.rmp-instructor {
+  font-weight: 600;
+  color: #1f2328;
+  font-size: 14px;
+}
+
+.rmp-loading {
+  color: #6b7280;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.rmp-error {
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.rmp-no-profile {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.rmp-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  color: #1f2328 !important;
+}
+
+.rmp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rmp-label {
+  color: #656d76 !important;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rmp-value {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1f2328 !important;
+}
+
+.rmp-rating {
+  color: #1a7f37 !important;
+}
+
+.rmp-difficulty {
+  color: #cf222e !important;
+}
+
+.rmp-take-again {
+  color: #1a7f37 !important;
+}
+
+.rmp-count {
+  color: #0969da !important;
+}
+
+.rmp-message {
+  color: #6b7280;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.rmp-footer {
+  padding-top: 12px;
+  border-top: 1px solid #e1e8ed;
+}
+
+.rmp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0969da;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  transition: all 0.15s ease;
+}
+
+.rmp-link:hover {
+  background: #0969da;
+  color: #ffffff;
+  border-color: #0969da;
+  text-decoration: none;
+}
+
+/* Loading animation */
+.rmp-loading::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 50%;
+  border-top-color: #3b82f6;
+  animation: spin 1s ease-in-out infinite;
+  margin-left: 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .rmp-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .rmp-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  .rmp-rating-card {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .rmp-title {
+    color: #f9fafb;
+  }
+  
+  .rmp-instructor {
+    color: #d1d5db;
+  }
+  
+  .rmp-label {
+    color: #9ca3af;
+  }
+  
+  .rmp-value {
+    color: #f9fafb;
+  }
+  
+  .rmp-link {
+    background: #1e40af;
+    color: #dbeafe;
+  }
+  
+  .rmp-link:hover {
+    background: #1e3a8a;
+    color: #bfdbfe;
+  }
+}
