@@ -1,12 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "UCSC Rate My Professors",
+  "name": "RateMy Slugs",
   "version": "1.0.0",
   "description": "Shows Rate My Professors ratings for UCSC courses on MyUCSC enrollment pages",
   
-  "permissions": [
-    "storage"
-  ],
+  "permissions": [],
   
   "host_permissions": [
     "https://my.ucsc.edu/*",
