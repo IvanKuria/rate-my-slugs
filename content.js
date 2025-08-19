@@ -67,15 +67,40 @@ class UCSCRMPExtension {
              });
            };
 
-           window.ucscRMPTestMapping = function(name) {
-             console.log(`🧪 Testing mapping for: "${name}"`);
-             chrome.runtime.sendMessage({ 
-               action: 'testMapping', 
-               instructorName: name 
-             }).then(result => {
-               console.log(`🧪 Test result:`, result);
-             });
-           };
+             window.ucscRMPTestMapping = function(name) {
+    console.log(`🧪 Testing mapping for: "${name}"`);
+    chrome.runtime.sendMessage({
+      action: 'testMapping',
+      instructorName: name
+    }).then(result => {
+      console.log(`🧪 Test result:`, result);
+    });
+  };
+
+  window.ucscRMPClearCache = function() {
+    console.log(`🗑️ Clearing all cached ratings...`);
+    chrome.runtime.sendMessage({
+      action: 'clearCache'
+    }).then(result => {
+      console.log(`🗑️ Cache cleared:`, result);
+    });
+  };
+
+  window.ucscRMPCacheStats = function() {
+    console.log(`📊 Getting cache statistics...`);
+    chrome.runtime.sendMessage({
+      action: 'getCacheStats'
+    }).then(result => {
+      if (result.status === 'success') {
+        console.log(`📊 Cache Stats:`, result.stats);
+        console.log(`📦 Total entries: ${result.stats.totalEntries}`);
+        console.log(`💾 Total size: ${result.stats.totalSize} bytes`);
+        if (result.stats.entries.length > 0) {
+          console.log(`📋 Cached professors:`, result.stats.entries);
+        }
+      }
+    });
+  };
 
            window.ucscRMPClearCache = function() {
              console.log('🧹 Clearing all cache');
