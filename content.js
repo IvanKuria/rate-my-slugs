@@ -539,6 +539,9 @@ class UCSCRMPExtension {
       "Simons,J.",
       "Fehren-Schmitz,L.",
       "Shange-Binion,S.T.",
+      "Ramirez-Ruiz,E.J.",
+      "Kilpatrick,A.M.",
+
     ];
     
     const rowText = row.textContent || row.innerText || '';

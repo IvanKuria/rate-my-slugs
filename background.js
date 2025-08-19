@@ -395,10 +395,13 @@ class RMPBackgroundService {
       "Hernandez Garavito,C.": "Carla Hernandez Garavito",
       "Mascarenhas Menna Barreto,J.": "Jorge Barreto",
       "Shange-Binion,S.T.": "Savannah Shange",
+      "Kilpatrick,A.M.": "Marm Kilpatrick",
+      
       
       // Test with some variations in case exact names don't match:
       "Simons,J.": "Julie Simons",
       "Fehren-Schmitz,L.": "Lars Fehren-Schmitz",
+      "Ramirez-Ruiz,E.J.": "Enrico Ramirez-Ruiz",
       
       
       // Example of direct ID mapping (more reliable):
