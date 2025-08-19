@@ -21,13 +21,13 @@
 .rmp-inline {
   display: inline-block;
   margin-left: 20px;
-  color: #666 !important;
+  color: black !important;
   font-size: 13px;
   font-weight: normal;
 }
 
 .rmp-label {
-  color: #666 !important;
+  color: black !important;
   font-size: 13px;
   font-weight: normal;
   margin-right: 4px;
