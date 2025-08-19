@@ -31,11 +31,17 @@ class RMPBackgroundService {
         console.log(`🔄 Refreshing data for: ${request.instructorName}`);
         this.handleRefreshProfessorRequest(request, sender, sendResponse);
         return true;
-      } else if (request.action === 'testMapping') {
-        console.log(`🧪 Testing mapping for: ${request.instructorName}`);
-        this.handleTestMappingRequest(request, sender, sendResponse);
-        return true;
-      }
+          } else if (request.action === 'testMapping') {
+      console.log(`🧪 Testing mapping for: ${request.instructorName}`);
+      this.handleTestMappingRequest(request, sender, sendResponse);
+      return true;
+    } else if (request.action === 'clearCache') {
+      this.handleClearCacheRequest(request, sender, sendResponse);
+      return true;
+    } else if (request.action === 'getCacheStats') {
+      this.handleCacheStatsRequest(request, sender, sendResponse);
+      return true;
+    }
 
       console.log('❌ Unknown message action:', request.action);
     });
@@ -63,8 +69,8 @@ class RMPBackgroundService {
     try {
       console.log(`🧹 Clearing cache for ${instructorName}...`);
       // Clear cache for this specific professor
-      this.cache.delete(instructorName);
-      await chrome.storage.local.remove(instructorName);
+      const cacheKey = `cache_${instructorName}`;
+      await chrome.storage.local.remove(cacheKey);
       
       console.log(`🔄 Fetching fresh data for ${instructorName}...`);
       // Fetch fresh data
@@ -75,6 +81,38 @@ class RMPBackgroundService {
       sendResponse({
         status: 'error',
         instructorName: instructorName,
+        error: error.message
+      });
+    }
+  }
+
+  async handleClearCacheRequest(request, sender, sendResponse) {
+    try {
+      const clearedCount = await this.clearAllCache();
+      sendResponse({
+        status: 'success',
+        message: `Cleared ${clearedCount} cached entries`
+      });
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      sendResponse({
+        status: 'error',
+        error: error.message
+      });
+    }
+  }
+
+  async handleCacheStatsRequest(request, sender, sendResponse) {
+    try {
+      const stats = await this.getCacheStats();
+      sendResponse({
+        status: 'success',
+        stats: stats
+      });
+    } catch (error) {
+      console.error('Error getting cache stats:', error);
+      sendResponse({
+        status: 'error',
         error: error.message
       });
     }
@@ -191,16 +229,95 @@ class RMPBackgroundService {
     }
   }
 
-  async cacheRating(instructorName, data) {
+  async getCachedRating(instructorName) {
     try {
+      const cacheKey = `cache_${instructorName}`;
+      const result = await chrome.storage.local.get(cacheKey);
+      const cachedData = result[cacheKey];
+      
+      if (!cachedData) {
+        console.log(`📦 No cache found for ${instructorName}`);
+        return null;
+      }
+      
+      // Check if cache is expired (24 hours)
+      const ttl = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      const isExpired = Date.now() - cachedData.timestamp > ttl;
+      
+      if (isExpired) {
+        console.log(`⏰ Cache expired for ${instructorName}, removing`);
+        await chrome.storage.local.remove(cacheKey);
+        return null;
+      }
+      
+      console.log(`✅ Cache hit for ${instructorName}`);
+      return cachedData.data;
+    } catch (error) {
+      console.error('Error reading cache:', error);
+      return null;
+    }
+  }
+
+  async setCachedRating(instructorName, data) {
+    try {
+      const cacheKey = `cache_${instructorName}`;
       await chrome.storage.local.set({
-        [`rmp_${instructorName}`]: {
+        [cacheKey]: {
           data: data,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          version: '1.0'
         }
       });
+      console.log(`💾 Cached rating for ${instructorName}`);
     } catch (error) {
       console.error('Error caching rating:', error);
+    }
+  }
+
+  async clearAllCache() {
+    try {
+      const allData = await chrome.storage.local.get();
+      const cacheKeys = Object.keys(allData).filter(key => key.startsWith('cache_'));
+      
+      if (cacheKeys.length > 0) {
+        await chrome.storage.local.remove(cacheKeys);
+        console.log(`🗑️ Cleared ${cacheKeys.length} cached entries`);
+        return cacheKeys.length;
+      } else {
+        console.log(`📦 No cache entries to clear`);
+        return 0;
+      }
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      return 0;
+    }
+  }
+
+  async getCacheStats() {
+    try {
+      const allData = await chrome.storage.local.get();
+      const cacheKeys = Object.keys(allData).filter(key => key.startsWith('cache_'));
+      const stats = {
+        totalEntries: cacheKeys.length,
+        totalSize: JSON.stringify(allData).length,
+        entries: []
+      };
+      
+      for (const key of cacheKeys) {
+        const instructorName = key.replace('cache_', '');
+        const cached = allData[key];
+        const ageHours = Math.round((Date.now() - cached.timestamp) / (1000 * 60 * 60));
+        stats.entries.push({
+          instructor: instructorName,
+          ageHours: ageHours,
+          hasData: !!cached.data
+        });
+      }
+      
+      return stats;
+    } catch (error) {
+      console.error('Error getting cache stats:', error);
+      return { totalEntries: 0, totalSize: 0, entries: [] };
     }
   }
 
@@ -218,6 +335,12 @@ class RMPBackgroundService {
     }
     
     try {
+      // Check cache first
+      const cachedRating = await this.getCachedRating(instructorName);
+      if (cachedRating) {
+        console.log(`⚡ Returning cached result for ${instructorName}`);
+        return cachedRating;
+      }
       // Check manual name mapping first (highest priority)
       const mappedName = this.checkNameMapping(instructorName);
       if (mappedName) {
@@ -322,8 +445,9 @@ class RMPBackgroundService {
           status: 'no-profile',
           instructorName: instructorName
         };
-        console.log(`⚡ Skipping cache - returning fresh result for ${instructorName}`);
-        return result;
+                  // Cache the successful result
+          await this.setCachedRating(instructorName, result);
+          return result;
       }
 
       // Log all matches for debugging
@@ -371,7 +495,8 @@ class RMPBackgroundService {
         }
       };
 
-      await this.cacheRating(instructorName, result);
+      // Cache the successful result
+      await this.setCachedRating(instructorName, result);
       return result;
 
     } catch (error) {
@@ -458,8 +583,9 @@ class RMPBackgroundService {
               rmpUrl: `https://www.ratemyprofessors.com/professor/${exactMatch.legacyId}`
             }
           };
-          
-          console.log(`⚡ Skipping cache - returning fresh result for ${originalInstructorName}`);
+        
+          // Cache the successful result
+          await this.setCachedRating(originalInstructorName, result);
           return result;
         }
       }
