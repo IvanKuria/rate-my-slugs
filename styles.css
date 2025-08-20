@@ -20,15 +20,15 @@
 /* Inline style matching MyUCSC's instructor/detail rows */
 .rmp-inline {
   display: inline-block;
-  margin-left: 20px;
+  margin-left: 15px;
   color: black !important;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: normal;
 }
 
 .rmp-label {
   color: black !important;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: normal;
   margin-right: 4px;
 }
@@ -36,14 +36,28 @@
 .rmp-values {
   display: inline;
   color: #333 !important;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .rmp-rating-value {
+  color: black !important;
+  font-weight: 0;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.rmp-take-again {
   color: #337ab7 !important;
   font-weight: 500;
   margin-right: 8px;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.rmp-review-value {
+  color: #337ab7 !important;
+  font-weight: 500;
+  margin-right: 8px;
+  font-size: 14px;
 }
 
 /* Dynamic color coding for ratings and difficulty */
@@ -58,6 +72,21 @@
 .rmp-difficulty-average { color: #FFD700 !important; }  /* Average difficulty (3.0-3.9) - Gold */
 .rmp-difficulty-hard { color: #FF6347 !important; }     /* Hard difficulty (4.0-4.4) - Tomato */
 .rmp-difficulty-very-hard { color: #DC143C !important; }/* Very hard difficulty (4.5-5.0) - Crimson */
+
+/* Banana slug rating icons */
+.slug-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.rmp-slugs {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+}
 
 .rmp-link {
   display: inline-flex;

@@ -704,8 +704,10 @@ class UCSCRMPExtension {
     if (data.status === 'success' && data.rating) {
       const rating = data.rating;
       
-      // Generate star display for rating
-      const stars = '★'.repeat(Math.round(rating.overallRating)) + '☆'.repeat(5 - Math.round(rating.overallRating));
+      // Generate banana slug display for rating
+      const slugCount = Math.round(rating.overallRating);
+      const slugUrl = chrome.runtime.getURL('icons/sammy/slug.png');
+      const slugs = `<img src="${slugUrl}" class="slug-icon" alt="slug rating">`.repeat(slugCount);
       
       // Determine color class for overall rating (higher = better = greener)
       const getRatingColorClass = (value) => {
@@ -730,11 +732,12 @@ class UCSCRMPExtension {
       
       content.innerHTML = `
         <span class="rmp-inline">
-          <span class="rmp-label">Rate My Professors:</span>
-          <span class="rmp-rating-value ${ratingClass}"><span class="rmp-star">${stars}</span> ${rating.overallRating}/5</span>
+          <span class="rmp-label">Quality Rating:</span>
+          <span class="rmp-rating-value ${ratingClass}"><span class="rmp-slugs">${slugs}</span> ${rating.overallRating}/5</span>
           <span class="rmp-rating-value">Difficulty: <span class="${difficultyClass}">${rating.difficulty}/5</span></span>
-          <span class="rmp-rating-value">${rating.wouldTakeAgainPercent}% would take again</span>
-          <span class="rmp-rating-value">(${rating.numRatings} reviews)</span>
+          <span class="rmp-take-again">${rating.wouldTakeAgainPercent}%</span>
+          <span class="rmp-rating-value">would take again</span>
+          <span class="rmp-review-value">(${rating.numRatings} reviews)</span>
           <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">View Profile ↗</a>
         </span>
       `;
