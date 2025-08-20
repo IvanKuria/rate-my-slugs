@@ -73,6 +73,24 @@
 .rmp-difficulty-hard { color: #FF6347 !important; }     /* Hard difficulty (4.0-4.4) - Tomato */
 .rmp-difficulty-very-hard { color: #DC143C !important; }/* Very hard difficulty (4.5-5.0) - Crimson */
 
+.slug-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 2px;
+}
+
+.slug-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  overflow: hidden;
+}
+
 /* Banana slug rating icons */
 .slug-icon {
   width: 18px;
@@ -80,6 +98,15 @@
   display: inline-block;
   vertical-align: middle;
   margin-right: 2px;
+}
+
+.slug-empty {
+  filter: grayscale(100%) brightness(160%) contrast(0%); 
+  opacity: 0.5; /* makes it look like an outline */
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
 .rmp-slugs {
