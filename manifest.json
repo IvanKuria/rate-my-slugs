@@ -17,7 +17,7 @@
       "matches": [
         "https://my.ucsc.edu/*"
       ],
-      "js": ["content.js"],
+      "js": ["content/content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
       "all_frames": true
@@ -26,7 +26,7 @@
       "matches": [
         "https://pisa.ucsc.edu/*"
       ],
-      "js": ["content.js"],
+      "js": ["content/content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
       "all_frames": true
@@ -34,7 +34,7 @@
   ],
   
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/background.js"
   },
   
   "icons": {

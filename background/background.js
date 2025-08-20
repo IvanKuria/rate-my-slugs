@@ -4,6 +4,7 @@
 class RMPBackgroundService {
   constructor() {
     this.UCSC_SCHOOL_ID = 'U2Nob29sLTEwNzg='; // Base64 encoded 'School-1078'
+    this.MAPPING_VERSION = '1.2'; // Increment when manual mappings change
     this.cache = new Map();
     this.pendingRequests = new Map();
     this.init();
@@ -236,7 +237,6 @@ class RMPBackgroundService {
       const cachedData = result[cacheKey];
       
       if (!cachedData) {
-        console.log(`📦 No cache found for ${instructorName}`);
         return null;
       }
       
@@ -244,13 +244,18 @@ class RMPBackgroundService {
       const ttl = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
       const isExpired = Date.now() - cachedData.timestamp > ttl;
       
-      if (isExpired) {
-        console.log(`⏰ Cache expired for ${instructorName}, removing`);
+      // Check if mapping version has changed (invalidate cache for new mappings)
+      const mappingChanged = !cachedData.mappingVersion || cachedData.mappingVersion !== this.MAPPING_VERSION;
+      
+      // Check if this instructor now has a manual mapping but cache was from before mapping existed
+      const hasNewMapping = this.checkNameMapping(instructorName) && 
+                           (!cachedData.mappingVersion || cachedData.data.status === 'no-profile');
+      
+      if (isExpired || mappingChanged || hasNewMapping) {
         await chrome.storage.local.remove(cacheKey);
         return null;
       }
       
-      console.log(`✅ Cache hit for ${instructorName}`);
       return cachedData.data;
     } catch (error) {
       console.error('Error reading cache:', error);
@@ -265,10 +270,10 @@ class RMPBackgroundService {
         [cacheKey]: {
           data: data,
           timestamp: Date.now(),
-          version: '1.0'
+          version: '1.0',
+          mappingVersion: this.MAPPING_VERSION
         }
       });
-      console.log(`💾 Cached rating for ${instructorName}`);
     } catch (error) {
       console.error('Error caching rating:', error);
     }
@@ -281,10 +286,8 @@ class RMPBackgroundService {
       
       if (cacheKeys.length > 0) {
         await chrome.storage.local.remove(cacheKeys);
-        console.log(`🗑️ Cleared ${cacheKeys.length} cached entries`);
         return cacheKeys.length;
       } else {
-        console.log(`📦 No cache entries to clear`);
         return 0;
       }
     } catch (error) {
@@ -324,40 +327,19 @@ class RMPBackgroundService {
   async fetchProfessorRating(instructorName, department = null) {
     console.log(`Fetching rating for ${instructorName} (Department: ${department})`);
     
-    // Special debugging for Simons,J.
-    if (instructorName === "Simons,J.") {
-      console.log(`🚨 DEBUGGING SIMONS,J. - Starting fetch process`);
-    }
-    
-    // Special debugging for Fehren-Schmitz,L.
-    if (instructorName === "Fehren-Schmitz,L.") {
-      console.log(`🚨 DEBUGGING FEHREN-SCHMITZ,L. - Starting fetch process`);
-    }
+
     
     try {
       // Check cache first
       const cachedRating = await this.getCachedRating(instructorName);
       if (cachedRating) {
-        console.log(`⚡ Returning cached result for ${instructorName}`);
         return cachedRating;
       }
       // Check manual name mapping first (highest priority)
       const mappedName = this.checkNameMapping(instructorName);
       if (mappedName) {
-        console.log(`📋 Found manual mapping: "${instructorName}" → "${mappedName}"`);
-        if (instructorName === "Simons,J.") {
-          console.log(`🚨 SIMONS,J. MAPPED TO: "${mappedName}"`);
-        }
-        if (instructorName === "Fehren-Schmitz,L.") {
-          console.log(`🚨 FEHREN-SCHMITZ,L. MAPPED TO: "${mappedName}"`);
-        }
+
         return await this.searchByExactName(mappedName, instructorName);
-      } else if (instructorName === "Simons,J.") {
-        console.log(`🚨 SIMONS,J. NOT FOUND IN MAPPING!`);
-        console.log(`🚨 Available mappings:`, Object.keys(this.checkNameMapping.toString().match(/\"([^\"]+)\"/g) || []));
-      } else if (instructorName === "Fehren-Schmitz,L.") {
-        console.log(`🚨 FEHREN-SCHMITZ,L. NOT FOUND IN MAPPING!`);
-        console.log(`🚨 Available mappings:`, Object.keys(this.checkNameMapping.toString().match(/\"([^\"]+)\"/g) || []));
       }
       
       // Normalize instructor name for search
@@ -372,17 +354,12 @@ class RMPBackgroundService {
       for (const searchString of searchStrings) {
         const results = await this.searchProfessor(searchString);
         if (results.length > 0) {
-          console.log(`🔍 Found ${results.length} professors total for search: "${searchString}"`);
-          
           // If department is provided, filter by department context first
           let filteredResults = results;
           if (department) {
             const departmentMatches = this.filterByDepartmentContext(results, department);
             if (departmentMatches.length > 0) {
-              console.log(`🏫 Found ${departmentMatches.length} professors with ${department} department context`);
               filteredResults = departmentMatches;
-            } else {
-              console.log(`🏫 No professors found with ${department} context, using all results`);
             }
           }
           
@@ -393,7 +370,6 @@ class RMPBackgroundService {
           });
           
           if (exactMatches.length > 0) {
-            console.log(`🎯 Found exact match for "${instructorName}" ${department ? `in ${department}` : ''}`);
             searchResult = exactMatches;
             break;
           }
@@ -404,13 +380,11 @@ class RMPBackgroundService {
           });
           
           if (initialMatches.length > 0) {
-            console.log(`🔤 Found initial-based match for "${instructorName}" ${department ? `in ${department}` : ''}`);
             // Prefer professors with department context if available
             if (department) {
               const deptMatches = this.filterByDepartmentContext(initialMatches, department);
               if (deptMatches.length > 0) {
                 searchResult = deptMatches;
-                console.log(`🏫 Prioritizing ${deptMatches.length} department matches over ${initialMatches.length} total matches`);
               } else {
                 searchResult = initialMatches;
               }
@@ -429,14 +403,9 @@ class RMPBackgroundService {
           });
           
           if (closeMatches.length > 0) {
-            console.log(`🔍 Found close match for "${instructorName}" ${department ? `in ${department}` : ''}`);
             searchResult = closeMatches;
             break;
           }
-          
-          // NO MORE FALLBACK TO RANDOM RESULTS
-          console.log(`❌ No valid matches found for "${instructorName}" - professor may not exist on RMP`);
-          // Continue to next search string instead of using random result
         }
       }
       
@@ -450,37 +419,13 @@ class RMPBackgroundService {
           return result;
       }
 
-      // Log all matches for debugging
-      console.log(`🔍 Found ${searchResult.length} professor matches for "${instructorName}":`);
-      searchResult.forEach((prof, idx) => {
-        const fullName = `${prof.firstName} ${prof.lastName}`;
-        console.log(`  ${idx + 1}. ${fullName} - Rating: ${prof.avgRatingRounded}, Difficulty: ${prof.avgDifficultyRounded}, Reviews: ${prof.numRatings}, Would Take Again: ${prof.wouldTakeAgainPercentRounded}%, ID: ${prof.legacyId}`);
-        
-        // Show top teaching tags for context
-        if (prof.teacherRatingTags && prof.teacherRatingTags.length > 0) {
-          const topTags = prof.teacherRatingTags.slice(0, 3).map(tag => tag.tagName).join(', ');
-          console.log(`    Tags: ${topTags}`);
-        }
-        
-        // Show recent class if available
-        if (prof.mostUsefulRating && prof.mostUsefulRating.class) {
-          console.log(`    Recent class: ${prof.mostUsefulRating.class}`);
-        }
-      });
+
 
       // Get detailed rating for the first match
       const professor = searchResult[0];
       const professorFullName = `${professor.firstName} ${professor.lastName}`;
       
-      console.log(`✅ Using professor: ${professorFullName}`);
-      console.log(`📊 Raw data:`, {
-        avgRatingRounded: professor.avgRatingRounded,
-        avgDifficultyRounded: professor.avgDifficultyRounded,
-        wouldTakeAgainPercentRounded: professor.wouldTakeAgainPercentRounded,
-        numRatings: professor.numRatings,
-        id: professor.id,
-        legacyId: professor.legacyId
-      });
+
       
       const result = {
         status: 'success',
@@ -511,6 +456,7 @@ class RMPBackgroundService {
 
   checkNameMapping(instructorName) {
     // Manual mapping dictionary: UCSC name → RMP name OR RMP ID
+    // ⚠️  IMPORTANT: When adding new mappings, increment MAPPING_VERSION in constructor to auto-clear old cache
     const nameMapping = {
       // Format options:
       // "UCSC_Format": "RMP_Full_Name"  (searches by name)
@@ -523,7 +469,28 @@ class RMPBackgroundService {
       "Kilpatrick,A.M.": "Marm Kilpatrick",
       "Simons,J.": "Julie Simons",
       "Fehren-Schmitz,L.": "Lars Fehren-Schmitz",
+      // page 1
       "Ramirez-Ruiz,E.J.": "Enrico Ramirez-Ruiz",
+      "Stone,C.M.": "Michael Stone",
+      "Rodriguez-Montero,P.": "Pamela Rodriguez-Montero",
+      "Ballard,P.": "Patrick Ballard",
+      "brice,m.": "Mattie Brice",
+      // page 2
+      "Heady,K.K.": "Kristen Kusic-Heady",
+      "Morozova,O.": "Olena Morozova Vaske",
+      "Corbett-Detig,R.": "Russell Corbett-Detig",
+      "Haussler,D.": "David Haussler",
+      "Green,R.E.": "Richard Ed Green",
+      "Eroy-Reveles,A.A.": "Aura Eroy-Reveles",
+      "Binder,C.M.": "Caitlin Binder",
+      "Wu,T.": "Ting Ting Wu",
+      "Chatziafratis,E.": "Vaggos Chatziafratis"
+
+
+
+
+      
+
       
       
       // Example of direct ID mapping (more reliable):
@@ -539,27 +506,13 @@ class RMPBackgroundService {
   async searchByExactName(fullName, originalInstructorName) {
     console.log(`🎯 Searching for exact mapped name: "${fullName}"`);
     
-    // Special debugging for Simons,J.
-    if (originalInstructorName === "Simons,J.") {
-      console.log(`🚨 SIMONS,J. - Searching RMP for: "${fullName}"`);
-    }
-    
-    // Special debugging for Fehren-Schmitz,L.
-    if (originalInstructorName === "Fehren-Schmitz,L.") {
-      console.log(`🚨 FEHREN-SCHMITZ,L. - Searching RMP for: "${fullName}"`);
-    }
+
     
     try {
       // Search using the exact full name
       const results = await this.searchProfessor(fullName);
       
-      if (originalInstructorName === "Simons,J.") {
-        console.log(`🚨 SIMONS,J. - RMP Search Results:`, results.length, results);
-      }
-      
-      if (originalInstructorName === "Fehren-Schmitz,L.") {
-        console.log(`🚨 FEHREN-SCHMITZ,L. - RMP Search Results:`, results.length, results);
-      }
+
       
       if (results.length > 0) {
         // Find the best match (should be exact since we have the full name)
@@ -569,7 +522,6 @@ class RMPBackgroundService {
         });
         
         if (exactMatch) {
-          console.log(`✅ Found exact match for mapped name: ${fullName}`);
           
           const result = {
             status: 'success',
@@ -591,14 +543,12 @@ class RMPBackgroundService {
       }
       
       // If exact match not found, fall back to fuzzy matching
-      console.log(`🔍 Exact match not found, trying fuzzy match for: ${fullName}`);
       const closeMatch = results.find(professor => {
         const professorFullName = `${professor.firstName} ${professor.lastName}`;
         return this.calculateSimilarity(professorFullName.toLowerCase(), fullName.toLowerCase()) > 0.8;
       });
       
       if (closeMatch) {
-        console.log(`🔍 Found close match for mapped name: ${fullName}`);
         const result = {
           status: 'success',
           instructorName: originalInstructorName,
@@ -701,38 +651,7 @@ class RMPBackgroundService {
 
 
 
-  getCommonNamesForInitial(initial) {
-    const commonNames = {
-      'A': ['Andrew', 'Alexander', 'Anthony', 'Adam', 'Aaron', 'Albert', 'Alan'],
-      'B': ['Brian', 'Benjamin', 'Brad', 'Bruce', 'Brandon', 'Bill', 'Bob'],
-      'C': ['Christopher', 'Charles', 'Craig', 'Christian', 'Chris', 'Carl'],
-      'D': ['David', 'Daniel', 'Donald', 'Douglas', 'Dennis', 'Derek', 'Dean'],
-      'E': ['Edward', 'Eric', 'Ethan', 'Eugene', 'Evan', 'Edwin', 'Earl'],
-      'F': ['Frank', 'Frederick', 'Felix', 'Fernando', 'Francis', 'Fred'],
-      'G': ['George', 'Gary', 'Gregory', 'Gerald', 'Glenn', 'Gordon', 'Grant'],
-      'H': ['Henry', 'Harold', 'Howard', 'Hugh', 'Harry', 'Hans', 'Hector'],
-      'I': ['Ian', 'Isaac', 'Ivan', 'Irwin', 'Irving', 'Ismael'],
-      'J': ['John', 'James', 'Jason', 'Jeffrey', 'Jonathan', 'Joseph', 'Joshua'],
-      'K': ['Kevin', 'Kenneth', 'Keith', 'Kyle', 'Karl', 'Kurt', 'Kane'],
-      'L': ['Larry', 'Lawrence', 'Leonard', 'Louis', 'Luke', 'Luis', 'Lee'],
-      'M': ['Michael', 'Mark', 'Matthew', 'Martin', 'Manuel', 'Marcus', 'Mario'],
-      'N': ['Nicholas', 'Nathan', 'Neil', 'Norman', 'Nathaniel', 'Noah'],
-      'O': ['Oscar', 'Oliver', 'Owen', 'Omar', 'Otis', 'Orlando'],
-      'P': ['Paul', 'Peter', 'Patrick', 'Philip', 'Paul', 'Preston', 'Perry'],
-      'Q': ['Quinton', 'Quentin', 'Quinn'],
-      'R': ['Robert', 'Richard', 'Ronald', 'Roger', 'Ralph', 'Raymond', 'Ryan'],
-      'S': ['Stephen', 'Steven', 'Scott', 'Samuel', 'Sean', 'Simon', 'Stuart'],
-      'T': ['Thomas', 'Timothy', 'Tony', 'Terry', 'Todd', 'Travis', 'Tyler'],
-      'U': ['Ulysses', 'Umberto', 'Uri'],
-      'V': ['Victor', 'Vincent', 'Vernon', 'Vince', 'Virgil'],
-      'W': ['William', 'Walter', 'Wayne', 'Warren', 'Wesley', 'Wade'],
-      'X': ['Xavier', 'Xerxes'],
-      'Y': ['Yves', 'York', 'Yale'],
-      'Z': ['Zachary', 'Zane', 'Zack']
-    };
-    
-    return commonNames[initial.toUpperCase()] || [];
-  }
+
 
   filterByDepartmentContext(professors, department) {
     // Map UCSC departments to related RMP course subjects/tags
@@ -851,11 +770,6 @@ class RMPBackgroundService {
     }
 
     return matrix[a.length][b.length];
-  }
-
-  isCloseEnough(a, b) {
-    // Keep old function for backward compatibility, but make it stricter
-    return this.calculateSimilarity(a, b) > 0.7;
   }
 
   async searchProfessor(name) {
@@ -1005,8 +919,6 @@ class RMPBackgroundService {
       }
     }
   }
-
-
 }
 
 // Initialize the background service
