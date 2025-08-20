@@ -705,9 +705,35 @@ class UCSCRMPExtension {
       const rating = data.rating;
       
       // Generate banana slug display for rating
-      const slugCount = Math.round(rating.overallRating);
+      const slugCount = Math.floor(rating.overallRating);
+      const fraction = rating.overallRating - slugCount;
       const slugUrl = chrome.runtime.getURL('icons/sammy/slug.png');
-      const slugs = `<img src="${slugUrl}" class="slug-icon" alt="slug rating">`.repeat(slugCount);
+      let slugs = '';
+
+      for (let i = 0; i < 5; i++) {
+        if (i < slugCount) {
+          // full slug
+          slugs += `
+            <span class="slug-wrapper">
+              <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
+              <img src="${slugUrl}" class="slug-icon slug-fill" style="clip-path: inset(0 0 0 0);" alt="slug full">
+            </span>`;
+        } else if (i === slugCount && fraction > 0) {
+          // fractional slug
+          const percent = Math.round(fraction * 100);
+          slugs += `
+            <span class="slug-wrapper">
+              <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
+              <img src="${slugUrl}" class="slug-icon slug-fill" style="clip-path: inset(0 ${100 - percent}% 0 0);" alt="slug partial">
+            </span>`;
+        } else {
+          // empty slug
+          slugs += `
+            <span class="slug-wrapper">
+              <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
+            </span>`;
+        }
+      }
       
       // Determine color class for overall rating (higher = better = greener)
       const getRatingColorClass = (value) => {
