@@ -10,9 +10,8 @@ class UCSCRMPExtension {
   }
 
   init() {
-    console.log('🎓 UCSC RMP Extension loaded');
-    console.log('📍 Current URL:', window.location.href);
-    console.log('📊 Page ready state:', document.readyState);
+
+
     
     // Add global functions for manual testing with proper binding
     const self = this;
@@ -495,31 +494,13 @@ class UCSCRMPExtension {
       }
 
       const instructorName = this.extractInstructorName(row);
-      console.log(`👨‍🏫 Extracted instructor name from row ${index + 1}:`, instructorName);
-      
-      // Special debugging for Simons,J.
-      if (instructorName && instructorName.includes("Simons")) {
-        console.log(`🚨 FOUND SIMONS! Extracted name: "${instructorName}"`);
-        console.log(`🚨 Exact match check: "${instructorName}" === "Simons,J." is`, instructorName === "Simons,J.");
-      }
-      
-      // Special debugging for Fehren-Schmitz,L.
-      if (instructorName && instructorName.includes("Fehren")) {
-        console.log(`🚨 FOUND FEHREN! Extracted name: "${instructorName}"`);
-        console.log(`🚨 Exact match check: "${instructorName}" === "Fehren-Schmitz,L." is`, instructorName === "Fehren-Schmitz,L.");
-      }
-      
       if (instructorName && instructorName !== 'STAFF/TBA') {
-        console.log(`✅ Processing instructor: ${instructorName}`);
         
         // Extract course department for context
         const department = this.extractCourseDepartment(row);
-        console.log(`🏫 Extracted department: ${department}`);
         
         this.processInstructor(row, instructorName, department);
         this.processedRows.add(row);
-      } else {
-        console.log(`❌ Skipping row ${index + 1}: no valid instructor name`);
       }
     });
     
@@ -566,7 +547,19 @@ class UCSCRMPExtension {
       "Shange-Binion,S.T.",
       "Ramirez-Ruiz,E.J.",
       "Kilpatrick,A.M.",
-
+      "Stone,C.M.",
+      "Rodriguez-Montero,P.",
+      "Ballard,P.",
+      "brice,m.",
+      "Heady,K.K.",
+      "Morozova,O.",
+      "Corbett-Detig,R.",
+      "Haussler,D.",
+      "Green,R.E.",
+      "Eroy-Reveles,A.A.",
+      "Binder,C.M.",
+      "Wu,T.",
+      
     ];
     
     const rowText = row.textContent || row.innerText || '';
