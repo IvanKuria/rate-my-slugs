@@ -81,12 +81,12 @@ A Chrome extension that automatically displays Rate My Professors ratings for UC
 
 ### File Structure
 ```
-├── manifest.json      # Extension configuration
-├── content.js         # Content script for DOM manipulation
-├── background.js      # Service worker for API calls
-├── styles.css         # Extension styling
-├── README.md          # This file
-└── icons/             # Extension icons (placeholder)
+├── background/      # stores background scripts for Service worker for API calls
+├── content/         # stores content files for DOM manipulation
+├── icons/           # Extension icons (placeholder)
+├── README.md        # Readme of project
+├── styles.css       # Extension styling
+
 ```
 
 ### Building
