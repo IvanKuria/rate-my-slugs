@@ -729,16 +729,18 @@ class UCSCRMPExtension {
       
       const ratingClass = getRatingColorClass(rating.overallRating);
       const difficultyClass = getDifficultyColorClass(rating.difficulty);
+      const slugStisticsURL = "https://slugtistics.com/"
       
       content.innerHTML = `
         <span class="rmp-inline">
           <span class="rmp-label">Quality Rating:</span>
           <span class="rmp-rating-value ${ratingClass}"><span class="rmp-slugs">${slugs}</span> ${rating.overallRating}/5</span>
           <span class="rmp-rating-value">Difficulty: <span class="${difficultyClass}">${rating.difficulty}/5</span></span>
-          <span class="rmp-take-again">${rating.wouldTakeAgainPercent}%</span>
+                     <span class="rmp-take-again">${rating.wouldTakeAgainPercent}%</span>
           <span class="rmp-rating-value">would take again</span>
           <span class="rmp-review-value">(${rating.numRatings} reviews)</span>
-          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">View Profile ↗</a>
+          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">👤 View Profile</a>
+          <a href="${slugStisticsURL}" target="_blank" class="rmp-link">📶 View Grade Distr</a>
         </span>
       `;
     } else if (data.status === 'no-profile') {
