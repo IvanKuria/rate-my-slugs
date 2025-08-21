@@ -20,15 +20,15 @@
 /* Inline style matching MyUCSC's instructor/detail rows */
 .rmp-inline {
   display: inline-block;
-  margin-left: 20px;
+  margin-left: 15px;
   color: black !important;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: normal;
 }
 
 .rmp-label {
   color: black !important;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: normal;
   margin-right: 4px;
 }
@@ -36,14 +36,27 @@
 .rmp-values {
   display: inline;
   color: #333 !important;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .rmp-rating-value {
+  color: black !important;
+  font-weight: 0;
+  margin-right: 20px;
+  font-size: 14px;
+}
+
+.rmp-take-again {
   color: #337ab7 !important;
   font-weight: 500;
-  margin-right: 8px;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.rmp-review-value {
+  color: #337ab7 !important;
+  font-weight: 500;
+  margin-right: 20px;
+  font-size: 14px;
 }
 
 /* Dynamic color coding for ratings and difficulty */
@@ -59,36 +72,55 @@
 .rmp-difficulty-hard { color: #FF6347 !important; }     /* Hard difficulty (4.0-4.4) - Tomato */
 .rmp-difficulty-very-hard { color: #DC143C !important; }/* Very hard difficulty (4.5-5.0) - Crimson */
 
-.rmp-link {
+.slug-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 2px;
+}
+
+.slug-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* Banana slug rating icons */
+.slug-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.slug-empty {
+  filter: grayscale(100%) brightness(160%) contrast(0%); 
+  opacity: 0.5; /* makes it look like an outline */
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.rmp-slugs {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  color: #ffffff !important;
-  background: linear-gradient(135deg, #0645AD 0%, #0856d6 100%);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 20px;
-  margin-left: 8px;
-  border: none;
-  box-shadow: 0 2px 4px rgba(6, 69, 173, 0.2);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-right: 4px;
+}
+
+.rmp-link {
+  gap: 5px;
+  margin-right: 20px;
+  color: #337ab7 !important;
+  font-weight: 400;
+  font-size: 14px;
   cursor: pointer;
-  letter-spacing: 0.025em;
-}
-
-.rmp-link:hover {
-  background: linear-gradient(135deg, #0856d6 0%, #0645AD 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(6, 69, 173, 0.3);
-  text-decoration: none;
-  color: #ffffff !important;
-}
-
-.rmp-link:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(6, 69, 173, 0.3);
 }
 
 /* Loading, error, and no-profile states */

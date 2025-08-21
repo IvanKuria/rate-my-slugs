@@ -10,9 +10,8 @@ class UCSCRMPExtension {
   }
 
   init() {
-    console.log('🎓 UCSC RMP Extension loaded');
-    console.log('📍 Current URL:', window.location.href);
-    console.log('📊 Page ready state:', document.readyState);
+
+
     
     // Add global functions for manual testing with proper binding
     const self = this;
@@ -495,31 +494,13 @@ class UCSCRMPExtension {
       }
 
       const instructorName = this.extractInstructorName(row);
-      console.log(`👨‍🏫 Extracted instructor name from row ${index + 1}:`, instructorName);
-      
-      // Special debugging for Simons,J.
-      if (instructorName && instructorName.includes("Simons")) {
-        console.log(`🚨 FOUND SIMONS! Extracted name: "${instructorName}"`);
-        console.log(`🚨 Exact match check: "${instructorName}" === "Simons,J." is`, instructorName === "Simons,J.");
-      }
-      
-      // Special debugging for Fehren-Schmitz,L.
-      if (instructorName && instructorName.includes("Fehren")) {
-        console.log(`🚨 FOUND FEHREN! Extracted name: "${instructorName}"`);
-        console.log(`🚨 Exact match check: "${instructorName}" === "Fehren-Schmitz,L." is`, instructorName === "Fehren-Schmitz,L.");
-      }
-      
       if (instructorName && instructorName !== 'STAFF/TBA') {
-        console.log(`✅ Processing instructor: ${instructorName}`);
         
         // Extract course department for context
         const department = this.extractCourseDepartment(row);
-        console.log(`🏫 Extracted department: ${department}`);
         
         this.processInstructor(row, instructorName, department);
         this.processedRows.add(row);
-      } else {
-        console.log(`❌ Skipping row ${index + 1}: no valid instructor name`);
       }
     });
     
@@ -566,7 +547,19 @@ class UCSCRMPExtension {
       "Shange-Binion,S.T.",
       "Ramirez-Ruiz,E.J.",
       "Kilpatrick,A.M.",
-
+      "Stone,C.M.",
+      "Rodriguez-Montero,P.",
+      "Ballard,P.",
+      "brice,m.",
+      "Heady,K.K.",
+      "Morozova,O.",
+      "Corbett-Detig,R.",
+      "Haussler,D.",
+      "Green,R.E.",
+      "Eroy-Reveles,A.A.",
+      "Binder,C.M.",
+      "Wu,T.",
+      
     ];
     
     const rowText = row.textContent || row.innerText || '';
@@ -711,8 +704,36 @@ class UCSCRMPExtension {
     if (data.status === 'success' && data.rating) {
       const rating = data.rating;
       
-      // Generate star display for rating
-      const stars = '★'.repeat(Math.round(rating.overallRating)) + '☆'.repeat(5 - Math.round(rating.overallRating));
+      // Generate banana slug display for rating
+      const slugCount = Math.floor(rating.overallRating);
+      const fraction = rating.overallRating - slugCount;
+      const slugUrl = chrome.runtime.getURL('icons/sammy/slug.png');
+      let slugs = '';
+
+      for (let i = 0; i < 5; i++) {
+        if (i < slugCount) {
+          // full slug
+          slugs += `
+            <span class="slug-wrapper">
+              <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
+              <img src="${slugUrl}" class="slug-icon slug-fill" style="clip-path: inset(0 0 0 0);" alt="slug full">
+            </span>`;
+        } else if (i === slugCount && fraction > 0) {
+          // fractional slug
+          const percent = Math.round(fraction * 100);
+          slugs += `
+            <span class="slug-wrapper">
+              <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
+              <img src="${slugUrl}" class="slug-icon slug-fill" style="clip-path: inset(0 ${100 - percent}% 0 0);" alt="slug partial">
+            </span>`;
+        } else {
+          // empty slug
+          slugs += `
+            <span class="slug-wrapper">
+              <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
+            </span>`;
+        }
+      }
       
       // Determine color class for overall rating (higher = better = greener)
       const getRatingColorClass = (value) => {
@@ -734,15 +755,18 @@ class UCSCRMPExtension {
       
       const ratingClass = getRatingColorClass(rating.overallRating);
       const difficultyClass = getDifficultyColorClass(rating.difficulty);
+      const slugStisticsURL = "https://slugtistics.com/"
       
       content.innerHTML = `
         <span class="rmp-inline">
-          <span class="rmp-label">Rate My Professors:</span>
-          <span class="rmp-rating-value ${ratingClass}"><span class="rmp-star">${stars}</span> ${rating.overallRating}/5</span>
+          <span class="rmp-label">Quality Rating:</span>
+          <span class="rmp-rating-value ${ratingClass}"><span class="rmp-slugs">${slugs}</span> ${rating.overallRating}/5</span>
           <span class="rmp-rating-value">Difficulty: <span class="${difficultyClass}">${rating.difficulty}/5</span></span>
-          <span class="rmp-rating-value">${rating.wouldTakeAgainPercent}% would take again</span>
-          <span class="rmp-rating-value">(${rating.numRatings} reviews)</span>
-          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">View Profile ↗</a>
+                     <span class="rmp-take-again">${rating.wouldTakeAgainPercent}%</span>
+          <span class="rmp-rating-value">would take again</span>
+          <span class="rmp-review-value">(${rating.numRatings} reviews)</span>
+          <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">👤 View Profile</a>
+          <a href="${slugStisticsURL}" target="_blank" class="rmp-link">📶 View Grade Distr</a>
         </span>
       `;
     } else if (data.status === 'no-profile') {

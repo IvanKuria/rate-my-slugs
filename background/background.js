@@ -242,7 +242,6 @@ class RMPBackgroundService {
       
       // Check if cache is expired (30 days)
       const ttl = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-      const isExpired = Date.now() - cachedData.timestamp > ttl;
       
       // Check if mapping version has changed (invalidate cache for new mappings)
       const mappingChanged = !cachedData.mappingVersion || cachedData.mappingVersion !== this.MAPPING_VERSION;
