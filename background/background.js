@@ -213,7 +213,7 @@ class RMPBackgroundService {
       if (cached && cached.timestamp) {
         const now = Date.now();
         const cacheAge = now - cached.timestamp;
-        const cacheTTL = 24 * 60 * 60 * 1000; // 24 hours
+        const cacheTTL = 30 * 24 * 60 * 60 * 1000; // 30 days
         
         if (cacheAge < cacheTTL) {
           return cached.data;
@@ -240,9 +240,8 @@ class RMPBackgroundService {
         return null;
       }
       
-      // Check if cache is expired (24 hours)
-      const ttl = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-      const isExpired = Date.now() - cachedData.timestamp > ttl;
+      // Check if cache is expired (30 days)
+      const ttl = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
       
       // Check if mapping version has changed (invalidate cache for new mappings)
       const mappingChanged = !cachedData.mappingVersion || cachedData.mappingVersion !== this.MAPPING_VERSION;
