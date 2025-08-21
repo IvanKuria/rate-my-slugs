@@ -34,14 +34,14 @@ A Chrome extension that automatically displays Rate My Professors ratings for UC
 2. The extension will automatically:
    - Find course rows with instructor information
    - Extract instructor names (e.g., "Simons,J.", "Movshovitz,N.")
-   - Display RMP rating cards below each course row
+   - Display a RMP rating card below each course row
    - Show loading states while fetching data
    - Cache results for future visits
 
 ## Rating Information Displayed
 
-- **Overall Rating**: Professor's overall rating out of 5.0
-- **Difficulty**: Course difficulty rating out of 5.0
+- **Overall Rating**: Professor's overall rating out of 5
+- **Difficulty**: Course difficulty rating out of 5
 - **Would Take Again**: Percentage of students who would take the course again
 - **Number of Ratings**: Total number of ratings submitted
 - **RMP Profile Link**: Direct link to the professor's RMP page
@@ -57,7 +57,7 @@ A Chrome extension that automatically displays Rate My Professors ratings for UC
 - **Manifest Version**: 3 (latest Chrome extension standard)
 - **Architecture**: Content script + Background service worker
 - **API**: Uses RMP's GraphQL endpoint with UCSC school ID (1078)
-- **Caching**: 24-hour TTL with chrome.storage.local
+- **Caching**: 30 day TTL with chrome.storage.local
 - **Error Handling**: Graceful fallbacks for network issues and missing data
 
 ## Troubleshooting
