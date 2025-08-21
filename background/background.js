@@ -250,7 +250,7 @@ class RMPBackgroundService {
       const hasNewMapping = this.checkNameMapping(instructorName) && 
                            (!cachedData.mappingVersion || cachedData.data.status === 'no-profile');
       
-      if (isExpired || mappingChanged || hasNewMapping) {
+      if (mappingChanged || hasNewMapping) {
         await chrome.storage.local.remove(cacheKey);
         return null;
       }
