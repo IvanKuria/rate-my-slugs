@@ -1,0 +1,25 @@
+Folder PATH listing for volume Windows-SSD
+Volume serial number is FE8C-A27E
+C:.
+¦   .DS_Store
+¦   banana-slug.png
+¦   manifest.json
+¦   README.md
+¦   structure.txt
+¦   styles.css
+¦   
++---background
+¦       background.js
+¦       
++---content
+¦       content.js
+¦       
++---icons
+    ¦   icon128.png
+    ¦   icon16.png
+    ¦   icon48.png
+    ¦   
+    +---sammy
+            sammy.png
+            slug.png
+            
