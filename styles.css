@@ -42,21 +42,20 @@
 .rmp-rating-value {
   color: black !important;
   font-weight: 0;
-  margin-right: 8px;
+  margin-right: 20px;
   font-size: 14px;
 }
 
 .rmp-take-again {
   color: #337ab7 !important;
   font-weight: 500;
-  margin-right: 8px;
   font-size: 14px;
 }
 
 .rmp-review-value {
   color: #337ab7 !important;
   font-weight: 500;
-  margin-right: 8px;
+  margin-right: 20px;
   font-size: 14px;
 }
 
@@ -116,35 +115,12 @@
 }
 
 .rmp-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #ffffff !important;
-  background: linear-gradient(135deg, #0645AD 0%, #0856d6 100%);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 20px;
-  margin-left: 8px;
-  border: none;
-  box-shadow: 0 2px 4px rgba(6, 69, 173, 0.2);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 5px;
+  margin-right: 20px;
+  color: #337ab7 !important;
+  font-weight: 400;
+  font-size: 14px;
   cursor: pointer;
-  letter-spacing: 0.025em;
-}
-
-.rmp-link:hover {
-  background: linear-gradient(135deg, #0856d6 0%, #0645AD 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(6, 69, 173, 0.3);
-  text-decoration: none;
-  color: #ffffff !important;
-}
-
-.rmp-link:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(6, 69, 173, 0.3);
 }
 
 /* Loading, error, and no-profile states */
