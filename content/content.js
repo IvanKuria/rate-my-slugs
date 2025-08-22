@@ -680,16 +680,16 @@ class UCSCRMPExtension {
 
     switch (status) {
       case 'loading':
-        content.innerHTML = `<span class="rmp-loading">Rate My Professors: Loading...</span>`;
+        content.innerHTML = `<span class="rmp-loading">Rate My Professor: Loading...</span>`;
         break;
       case 'success':
-        content.innerHTML = `<span class="rmp-inline">Rate My Professors: <span class="rmp-values">Loading data...</span></span>`;
+        content.innerHTML = `<span class="rmp-inline">Rate My Professor: <span class="rmp-values">Loading data...</span></span>`;
         break;
       case 'error':
-        content.innerHTML = `<span class="rmp-error">Rate My Professors: Unable to load ratings</span>`;
+        content.innerHTML = `<span class="rmp-error">Rate My Professor: Unable to load ratings</span>`;
         break;
       case 'no-profile':
-        content.innerHTML = `<span class="rmp-no-profile">Rate My Professors: No ratings found</span>`;
+        content.innerHTML = `<span class="rmp-no-profile">Rate My Professor: No ratings found</span>`;
         break;
     }
 
@@ -735,7 +735,7 @@ class UCSCRMPExtension {
         }
       }
       
-      // Determine color class for overall rating (higher = better = greener)
+      // Determine color class for overall rating u(higher = better = greener)
       const getRatingColorClass = (value) => {
         if (value >= 4.5) return 'rmp-rating-excellent';
         if (value >= 4.0) return 'rmp-rating-good';

@@ -62,13 +62,13 @@
 /* Dynamic color coding for ratings and difficulty */
 .rmp-rating-excellent { color: #228B22 !important; } /* High rating (4.5-5.0) - Green */
 .rmp-rating-good { color: #32CD32 !important; }      /* Good rating (4.0-4.4) - Light Green */
-.rmp-rating-average { color: #FFD700 !important; }   /* Average rating (3.0-3.9) - Gold */
+.rmp-rating-average { color: #d8bc1b !important; }   /* Average rating (3.0-3.9) - Gold */
 .rmp-rating-poor { color: #FF6347 !important; }      /* Poor rating (2.0-2.9) - Tomato */
 .rmp-rating-bad { color: #DC143C !important; }       /* Bad rating (0-1.9) - Crimson */
 
 .rmp-difficulty-easy { color: #228B22 !important; }     /* Easy difficulty (0-1.9) - Green */
 .rmp-difficulty-moderate { color: #32CD32 !important; } /* Moderate difficulty (2.0-2.9) - Light Green */
-.rmp-difficulty-average { color: #FFD700 !important; }  /* Average difficulty (3.0-3.9) - Gold */
+.rmp-difficulty-average { color: #d8bc1b !important; }  /* Average difficulty (3.0-3.9) - Gold */
 .rmp-difficulty-hard { color: #FF6347 !important; }     /* Hard difficulty (4.0-4.4) - Tomato */
 .rmp-difficulty-very-hard { color: #DC143C !important; }/* Very hard difficulty (4.5-5.0) - Crimson */
 
