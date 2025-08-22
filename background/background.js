@@ -394,12 +394,10 @@ class RMPBackgroundService {
             break;
           }
           
-          // If still no matches, try close matches (most permissive) but be more strict
+          // If still no matches, try simple name matches (same last name + first initial)
           const closeMatches = filteredResults.filter(professor => {
             const fullName = `${professor.firstName} ${professor.lastName}`;
-            const similarity = this.calculateSimilarity(fullName.toLowerCase(), normalizedName.toLowerCase());
-            // Only accept very close matches (similarity > 0.8)
-            return similarity > 0.8;
+            return this.simpleNameMatch(fullName, normalizedName);
           });
           
           if (closeMatches.length > 0) {
@@ -542,10 +540,10 @@ class RMPBackgroundService {
         }
       }
       
-      // If exact match not found, fall back to fuzzy matching
+      // If exact match not found, fall back to simple matching
       const closeMatch = results.find(professor => {
         const professorFullName = `${professor.firstName} ${professor.lastName}`;
-        return this.calculateSimilarity(professorFullName.toLowerCase(), fullName.toLowerCase()) > 0.8;
+        return this.simpleNameMatch(professorFullName, fullName);
       });
       
       if (closeMatch) {
@@ -692,14 +690,7 @@ class RMPBackgroundService {
         }
       }
 
-      // Check most useful rating content
-      if (professor.mostUsefulRating && professor.mostUsefulRating.class) {
-        const className = professor.mostUsefulRating.class.toLowerCase();
-        if (relatedTerms.some(term => className.includes(term))) {
-          console.log(`📚 Professor ${professor.firstName} ${professor.lastName} teaches relevant class: ${professor.mostUsefulRating.class}`);
-          return true;
-        }
-      }
+
 
       return false;
     });
@@ -736,40 +727,38 @@ class RMPBackgroundService {
     return true;
   }
 
-  calculateSimilarity(a, b) {
-    // Calculate similarity ratio (0 to 1, where 1 is perfect match)
-    const maxLength = Math.max(a.length, b.length);
-    if (maxLength === 0) return 1;
+  simpleNameMatch(professorName, queryName) {
+    // Simple matching: same last name and first initial
+    const prof = professorName.toLowerCase().trim();
+    const query = queryName.toLowerCase().trim();
     
-    const distance = this.levenshteinDistance(a, b);
-    return (maxLength - distance) / maxLength;
-  }
-
-  levenshteinDistance(a, b) {
-    const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-
-    for (let i = 0; i <= a.length; i++) {
-      matrix[i][0] = i;
+    const profParts = prof.split(' ');
+    const queryParts = query.split(' ');
+    
+    // Need at least first and last name for both
+    if (profParts.length < 2 || queryParts.length < 2) {
+      return false;
     }
-    for (let j = 0; j <= b.length; j++) {
-      matrix[0][j] = j;
+    
+    // Compare last names (exact match required)
+    const profLast = profParts[profParts.length - 1];
+    const queryLast = queryParts[queryParts.length - 1];
+    
+    if (profLast !== queryLast) {
+      return false;
     }
-
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        if (a[i - 1] === b[j - 1]) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j - 1] + 1
-          );
-        }
-      }
+    
+    // Compare first initials
+    const profFirst = profParts[0][0];
+    const queryFirst = queryParts[0][0];
+    
+    const matches = profFirst === queryFirst;
+    
+    if (matches) {
+      console.log(`✅ Simple match: "${queryName}" matches "${professorName}" (same last name + first initial)`);
     }
-
-    return matrix[a.length][b.length];
+    
+    return matches;
   }
 
   async searchProfessor(name) {
@@ -819,28 +808,6 @@ class RMPBackgroundService {
                 legacyId
                 tagCount
                 tagName
-              }
-              mostUsefulRating {
-                id
-                class
-                isForOnlineClass
-                legacyId
-                comment
-                helpfulRatingRounded
-                ratingTags
-                grade
-                date
-                iWouldTakeAgain
-                qualityRating
-                difficultyRatingRounded
-                teacherNote{
-                  id
-                  comment
-                  createdAt
-                  class
-                }
-                thumbsDownTotal
-                thumbsUpTotal
               }
               avgDifficultyRounded
               school {
