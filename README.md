@@ -107,4 +107,5 @@ This is a personal project, but suggestions and improvements are welcome!
 
 ## License
 
-MIT License - feel free to use and modify as needed.
+This project is proprietary software. See the [LICENSE](LICENSE) file for details. 
+All rights reserved - copying and distribution are prohibited without explicit permission.

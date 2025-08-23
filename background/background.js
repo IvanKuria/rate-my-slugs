@@ -482,7 +482,14 @@ class RMPBackgroundService {
       "Eroy-Reveles,A.A.": "Aura Eroy-Reveles",
       "Binder,C.M.": "Caitlin Binder",
       "Wu,T.": "Ting Ting Wu",
-      "Chatziafratis,E.": "Vaggos Chatziafratis"
+      "Chatziafratis,E.": "Vaggos Chatziafratis",
+      // page 3 - rememeber to add the guy here
+
+      // page 4
+      "Wardrip-Fruin,N.": "Noah Wardrip-Fruin",
+      "Marisol LeBron": "Marisol LeBrón"
+
+      
 
 
 
