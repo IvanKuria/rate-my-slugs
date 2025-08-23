@@ -24,6 +24,9 @@ A Chrome extension that automatically displays Rate My Professors ratings for UC
 
 *Coming soon - will be available on Chrome Web Store*
 
+### Zip File Creation
+Run this command in the directory: `zip -r ucsc-rmp-extension.zip manifest.json content/ background/ styles.css icons/ -x "*.DS_Store"`
+
 ## Usage
 
 1. Navigate to the UCSC course enrollment page:
