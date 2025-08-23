@@ -11,15 +11,6 @@
     "https://pisa.ucsc.edu/*",
     "https://www.ratemyprofessors.com/*"
   ],
-
-  "permission_justification": {
-    "storage": "Required to cache Rate My Professors API responses locally, reducing redundant network requests and improving page load performance. Stores professor ratings for up to 30 days to minimize API calls while ensuring students see current data during course enrollment.",
-    "host_permissions": {
-      "https://my.ucsc.edu/*": "Essential access to UCSC's MyUCSC enrollment pages to extract instructor names from course listings and inject professor rating displays. This is the primary interface where students search and enroll in courses.",
-      "https://pisa.ucsc.edu/*": "Required access to UCSC's PISA enrollment system (iframe content within MyUCSC pages). Both enrollment interfaces are needed to provide comprehensive professor rating coverage across all UCSC course search workflows.",
-      "https://www.ratemyprofessors.com/*": "Necessary to fetch public professor rating data via Rate My Professors' GraphQL API. This external API provides the core rating information (overall rating, difficulty, reviews) that the extension displays to help students make informed enrollment decisions."
-    }
-  },
   
   "content_scripts": [
     {
