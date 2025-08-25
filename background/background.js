@@ -9,33 +9,7 @@ let gradeDataMap = {}; // Store grade data
 // Initialize the background service
 console.log('🎓 UCSC RMP Background Service initialized');
 console.log('🏫 UCSC School ID:', UCSC_SCHOOL_ID);
-loadGradeData(); // Load grade data on startup
 setupMessageHandlers();
-
-// Load grade data from file
-async function loadGradeData() {
-  try {
-    console.log('📊 Loading grade data...');
-    const response = await fetch(chrome.runtime.getURL('data/grade_data_extension.json'));
-    gradeDataMap = await response.json();
-    console.log('✅ Grade data loaded:', Object.keys(gradeDataMap).length, 'professors');
-  } catch (error) {
-    console.error('❌ Failed to load grade data:', error);
-    gradeDataMap = {};
-  }
-}
-
-// Get grade data for a professor-class combination
-function getGradeData(matchedName, className) {
-  // Use the matchedName (from RMP results) to look up grade data
-  if (gradeDataMap[matchedName] && gradeDataMap[matchedName][className]) {
-    console.log(`📊 Found grade data for ${matchedName} - ${className}`);
-    return gradeDataMap[matchedName][className];
-  }
-  
-  console.log(`📊 No grade data found for ${matchedName} - ${className}`);
-  return null;
-}
 
 // Setup message handlers
 function setupMessageHandlers() {
@@ -46,10 +20,6 @@ function setupMessageHandlers() {
       console.log(`🔍 Processing rating request for: ${request.instructorName}`);
       handleProfessorRatingRequest(request, sender, sendResponse);
       return true; // Keep message channel open for async response
-    } else if (request.action === 'getGradeData') {
-      console.log(`📊 Processing grade data request for: ${request.matchedName} - ${request.className}`);
-      handleGradeDataRequest(request, sender, sendResponse);
-      return true;
     } else if (request.action === 'clearCache') {
       console.log('🧹 Clearing cache');
       handleClearCacheRequest(request, sender, sendResponse);
@@ -69,18 +39,6 @@ function setupMessageHandlers() {
 
     console.log('❌ Unknown message action:', request.action);
   });
-}
-
-// Handle grade data requests
-async function handleGradeDataRequest(request, sender, sendResponse) {
-  const { matchedName, className } = request;
-  try {
-    const gradeData = getGradeData(matchedName, className);
-    sendResponse({ gradeData });
-  } catch (error) {
-    console.error('Error getting grade data:', error);
-    sendResponse({ gradeData: null, error: error.message });
-  }
 }
 
 // Handle clear cache requests
