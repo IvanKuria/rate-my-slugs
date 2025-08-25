@@ -122,18 +122,18 @@ async function handleTestMappingRequest(request, sender, sendResponse) {
         
         if (exactMatch) {
           console.log(`🎯 Found exact match: ${exactMatch.firstName} ${exactMatch.lastName}`);
-          sendResponse({
-            status: 'success',
-            mapping: `"${request.instructorName}" → "${mappedName}"`,
-            found: true,
-            professor: `${exactMatch.firstName} ${exactMatch.lastName}`,
-            ratings: {
-              overall: exactMatch.avgRatingRounded,
-              difficulty: exactMatch.avgDifficultyRounded,
-              wouldTakeAgain: exactMatch.wouldTakeAgainPercentRounded,
-              numRatings: exactMatch.numRatings
-            }
-          });
+                      sendResponse({
+              status: 'success',
+              mapping: `"${request.instructorName}" → "${mappedName}"`,
+              found: true,
+              professor: `${exactMatch.firstName} ${exactMatch.lastName}`,
+              ratings: {
+                overall: roundProfessorRating(exactMatch.avgRatingRounded),
+                difficulty: roundProfessorRating(exactMatch.avgDifficultyRounded),
+                wouldTakeAgain: roundWouldTakeAgainPercent(exactMatch.wouldTakeAgainPercentRounded),
+                numRatings: exactMatch.numRatings
+              }
+            });
         } else {
           console.log(`❌ No exact match found for "${mappedName}"`);
           sendResponse({
@@ -285,6 +285,27 @@ async function getCacheStats() {
   }
 }
 
+// rounds overallDifficulty and difficulty 
+function roundProfessorRating(professorRating) {
+  if (professorRating !== null && professorRating !== undefined) {
+    const roundedProfessorRating = Math.round(professorRating * 10) / 10;
+    return roundedProfessorRating;
+  }
+  else {
+    return 'N/A';
+  }
+}
+
+function roundWouldTakeAgainPercent(percentage) {
+  if (percentage !== null && percentage !== undefined && percentage >= 0){
+    const roundedPercentage = Math.round(percentage);
+    return roundedPercentage;
+  }
+  else {
+    return 'N/A';
+  }
+}
+
 // Fetch professor rating
 async function fetchProfessorRating(instructorName, department = null) {
   console.log(`Fetching rating for ${instructorName} (Department: ${department})`);
@@ -386,9 +407,9 @@ async function fetchProfessorRating(instructorName, department = null) {
       instructorName: instructorName,
       matchedName: professorFullName,
       rating: {
-        overallRating: (professor.avgRatingRounded !== null && professor.avgRatingRounded !== undefined) ? Math.round(professor.avgRatingRounded * 10) / 10 : 'N/A',
-        difficulty: (professor.avgDifficultyRounded !== null && professor.avgDifficultyRounded !== undefined) ? Math.round(professor.avgDifficultyRounded * 10) / 10 : 'N/A',
-        wouldTakeAgainPercent: (professor.wouldTakeAgainPercentRounded !== null && professor.wouldTakeAgainPercentRounded !== undefined && professor.wouldTakeAgainPercentRounded >= 0) ? Math.round(professor.wouldTakeAgainPercentRounded) : 'N/A',
+        overallRating: roundProfessorRating(professor.avgRatingRounded),
+        difficulty: roundProfessorRating(professor.avgDifficultyRounded),
+        wouldTakeAgainPercent: roundWouldTakeAgainPercent(professor.wouldTakeAgainPercentRounded),
         numRatings: professor.numRatings || 0,
         rmpUrl: `https://www.ratemyprofessors.com/professor/${professor.legacyId}`
       }
@@ -487,9 +508,9 @@ async function searchByExactName(fullName, originalInstructorName) {
           instructorName: originalInstructorName,
           matchedName: fullName,
           rating: {
-            overallRating: (exactMatch.avgRatingRounded !== null && exactMatch.avgRatingRounded !== undefined) ? Math.round(exactMatch.avgRatingRounded * 10) / 10 : 'N/A',
-            difficulty: (exactMatch.avgDifficultyRounded !== null && exactMatch.avgDifficultyRounded !== undefined) ? Math.round(exactMatch.avgDifficultyRounded * 10) / 10 : 'N/A',
-            wouldTakeAgainPercent: (exactMatch.wouldTakeAgainPercentRounded !== null && exactMatch.wouldTakeAgainPercentRounded !== undefined && exactMatch.wouldTakeAgainPercentRounded >= 0) ? Math.round(exactMatch.wouldTakeAgainPercentRounded) : 'N/A',
+            overallRating: roundProfessorRating(exactMatch.avgRatingRounded),
+            difficulty: roundProfessorRating(exactMatch.avgDifficultyRounded),
+            wouldTakeAgainPercent: roundWouldTakeAgainPercent(exactMatch.wouldTakeAgainPercentRounded),
             numRatings: exactMatch.numRatings || 0,
             rmpUrl: `https://www.ratemyprofessors.com/professor/${exactMatch.legacyId}`
           }
@@ -513,9 +534,9 @@ async function searchByExactName(fullName, originalInstructorName) {
         instructorName: originalInstructorName,
         matchedName: `${closeMatch.firstName} ${closeMatch.lastName}`,
         rating: {
-          overallRating: (closeMatch.avgRatingRounded !== null && closeMatch.avgRatingRounded !== undefined) ? Math.round(closeMatch.avgRatingRounded * 10) / 10 : 'N/A',
-          difficulty: (closeMatch.avgDifficultyRounded !== null && closeMatch.avgDifficultyRounded !== undefined) ? Math.round(closeMatch.avgDifficultyRounded * 10) / 10 : 'N/A',
-          wouldTakeAgainPercent: (closeMatch.wouldTakeAgainPercentRounded !== null && closeMatch.wouldTakeAgainPercentRounded !== undefined && closeMatch.wouldTakeAgainPercentRounded >= 0) ? Math.round(closeMatch.wouldTakeAgainPercentRounded) : 'N/A',
+          overallRating: roundProfessorRating(closeMatch.avgRatingRounded),
+          difficulty: roundProfessorRating(closeMatch.avgDifficultyRounded),
+          wouldTakeAgainPercent: roundWouldTakeAgainPercent(closeMatch.wouldTakeAgainPercentRounded),
           numRatings: closeMatch.numRatings || 0,
           rmpUrl: `https://www.ratemyprofessors.com/professor/${closeMatch.legacyId}`
         }
@@ -609,6 +630,25 @@ function getTopNamesForInitial(initial) {
   };
   
   return topNames[initial.toUpperCase()] || [];
+}
+
+// Rounds overallDifficulty and difficulty 
+function roundProfessorRating(professorRating) {
+  if (professorRating !== null && professorRating !== undefined) {
+    let roundedProfessorRating = Math.round(professorRating * 10) / 10;
+    return roundedProfessorRating;
+  } else {
+    return 'N/A';
+  }
+}
+
+function roundWouldTakeAgainPercent(percentage) {
+  if (percentage !== null && percentage !== undefined && percentage >= 0) {
+    let roundedPercentage = Math.round(percentage);
+    return roundedPercentage;
+  } else {
+    return 'N/A';
+  }
 }
 
 // Filter by department context
