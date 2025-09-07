@@ -1,17 +1,20 @@
-name: Lint (Biome via npx)
+name: Lint (Biome)
 on:
   pull_request:
   push:
     branches: [main]
 
 jobs:
-  biome-npx:
+  biome:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
+      - uses: biomejs/setup-biome@v2
+        with:
+          biome-version: 1.8.3
+      - name: Biome version
+        run: biome --version
       - name: Lint
-        run: npx --yes @biomejs/biome@1.8.3 lint .
-      - name: Format check
-        run: npx --yes @biomejs/biome@1.8.3 format --write=false .
+        run: biome lint .
+      - name: Format check (no writes)
+        run: biome format --write=false .
