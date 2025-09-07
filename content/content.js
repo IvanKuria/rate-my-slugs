@@ -494,6 +494,20 @@ function extractInstructorName(row) {
     "Eroy-Reveles,A.A.",
     "Binder,C.M.",
     "Wu,T.",
+    "Chatziafratis,E.",
+    "Wardrip-Fruin,N.",
+    "LeBron,M",
+    "Renau Ardevol,J",
+    "Garrick-Bethell,I",
+    "McGuire,S",
+    "Kim,G",
+    "Gallagher-Geurtsen,T",
+    "Kissell,R"
+    
+
+
+
+
     
   ];
   

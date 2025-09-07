@@ -465,7 +465,21 @@ function checkNameMapping(instructorName) {
 
     // page 4
     "Wardrip-Fruin,N.": "Noah Wardrip-Fruin",
-    "Marisol LeBron": "Marisol LeBrón"
+    "LeBron,M": "Marisol LeBrón",
+
+    // page 5 - none
+    // page 6
+    "Renau Ardevol,J": "Jose Renau",
+    "Garrick-Bethell,I": "Ian Garrick-Bethell",
+    "McGuire,S": "Steve Mcguire",
+    // page 7
+    "Kim,G": "Kim Gueyon",
+    "Gallagher-Geurtsen,T": "Tricia Gallagher-Geurtsen",
+    "Kissell,R": "Rene Espinoza-Kissell",
+
+    
+
+
 
     
     
