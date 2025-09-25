@@ -7,31 +7,31 @@ const MAPPING_VERSION = "1.2"; // Increment when manual mappings change
 let gradeDataMap = {}; // Store grade data
 
 // Initialize the background service
-console.log("🎓 UCSC RMP Background Service initialized");
-console.log("🏫 UCSC School ID:", UCSC_SCHOOL_ID);
+console.log("UCSC RMP Background Service initialized");
+console.log("UCSC School ID:", UCSC_SCHOOL_ID);
 setupMessageHandlers();
 
 // Setup message handlers
 function setupMessageHandlers() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("📨 Background received message:", request);
+    console.log("Background received message:", request);
 
     if (request.action === "getProfessorRating") {
       console.log(
-        `🔍 Processing rating request for: ${request.instructorName}`
+        `Processing rating request for: ${request.instructorName}`
       );
       handleProfessorRatingRequest(request, sender, sendResponse);
       return true; // Keep message channel open for async response
     } else if (request.action === "clearCache") {
-      console.log("🧹 Clearing cache");
+      console.log("Clearing cache");
       handleClearCacheRequest(request, sender, sendResponse);
       return true;
     } else if (request.action === "refreshProfessor") {
-      console.log(`🔄 Refreshing data for: ${request.instructorName}`);
+      console.log(`Refreshing data for: ${request.instructorName}`);
       handleRefreshProfessorRequest(request, sender, sendResponse);
       return true;
     } else if (request.action === "testMapping") {
-      console.log(`🧪 Testing mapping for: ${request.instructorName}`);
+      console.log(`Testing mapping for: ${request.instructorName}`);
       handleTestMappingRequest(request, sender, sendResponse);
       return true;
     } else if (request.action === "getCacheStats") {
@@ -39,7 +39,7 @@ function setupMessageHandlers() {
       return true;
     }
 
-    console.log("❌ Unknown message action:", request.action);
+    console.log("Unknown message action:", request.action);
   });
 }
 
@@ -65,12 +65,12 @@ async function handleRefreshProfessorRequest(request, sender, sendResponse) {
   const { instructorName } = request;
 
   try {
-    console.log(`🧹 Clearing cache for ${instructorName}...`);
+    console.log(`Clearing cache for ${instructorName}...`);
     // Clear cache for this specific professor
     const cacheKey = `cache_${instructorName}`;
     await chrome.storage.local.remove(cacheKey);
 
-    console.log(`🔄 Fetching fresh data for ${instructorName}...`);
+    console.log(`Fetching fresh data for ${instructorName}...`);
     // Fetch fresh data
     const result = await fetchProfessorRating(instructorName);
     sendResponse(result);
@@ -104,20 +104,20 @@ async function handleCacheStatsRequest(request, sender, sendResponse) {
 // Handle test mapping requests
 async function handleTestMappingRequest(request, sender, sendResponse) {
   try {
-    console.log(`🧪 Testing mapping for: "${request.instructorName}"`);
+    console.log(`Testing mapping for: "${request.instructorName}"`);
 
     // Check if manual mapping exists
     const mappedName = checkNameMapping(request.instructorName);
 
     if (mappedName) {
       console.log(
-        `✅ Found mapping: "${request.instructorName}" → "${mappedName}"`
+        `Found mapping: "${request.instructorName}" → "${mappedName}"`
       );
 
       // Test search using the mapped name
       const searchResults = await searchProfessor(mappedName);
       console.log(
-        `🔍 Search results for "${mappedName}":`,
+        `Search results for "${mappedName}":`,
         searchResults.length
       );
 
@@ -129,7 +129,7 @@ async function handleTestMappingRequest(request, sender, sendResponse) {
 
         if (exactMatch) {
           console.log(
-            `🎯 Found exact match: ${exactMatch.firstName} ${exactMatch.lastName}`
+            `Found exact match: ${exactMatch.firstName} ${exactMatch.lastName}`
           );
           sendResponse({
             status: "success",
@@ -146,7 +146,7 @@ async function handleTestMappingRequest(request, sender, sendResponse) {
             },
           });
         } else {
-          console.log(`❌ No exact match found for "${mappedName}"`);
+          console.log(`No exact match found for "${mappedName}"`);
           sendResponse({
             status: "mapping_exists_no_match",
             mapping: `"${request.instructorName}" → "${mappedName}"`,
@@ -155,7 +155,7 @@ async function handleTestMappingRequest(request, sender, sendResponse) {
           });
         }
       } else {
-        console.log(`❌ No search results for "${mappedName}"`);
+        console.log(`No search results for "${mappedName}"`);
         sendResponse({
           status: "mapping_exists_no_results",
           mapping: `"${request.instructorName}" → "${mappedName}"`,
@@ -163,7 +163,7 @@ async function handleTestMappingRequest(request, sender, sendResponse) {
         });
       }
     } else {
-      console.log(`❌ No mapping found for: "${request.instructorName}"`);
+      console.log(`No mapping found for: "${request.instructorName}"`);
       sendResponse({
         status: "no_mapping",
         instructorName: request.instructorName,
@@ -245,7 +245,7 @@ async function setCachedRating(instructorName, data) {
       [cacheKey]: {
         data: data,
         timestamp: Date.now(),
-        version: "1.0",
+        version: "1.2",
         mappingVersion: MAPPING_VERSION,
       },
     });
@@ -462,7 +462,7 @@ async function fetchProfessorRating(instructorName, department = null) {
 // Check name mapping
 function checkNameMapping(instructorName) {
   // Manual mapping dictionary: UCSC name → RMP name OR RMP ID
-  // ⚠️  IMPORTANT: When adding new mappings, increment MAPPING_VERSION in constructor to auto-clear old cache
+  // IMPORTANT: When adding new mappings, increment MAPPING_VERSION in constructor to auto-clear old cache
   const nameMapping = {
     // Format options:
     // "UCSC_Format": "RMP_Full_Name"  (searches by name)
@@ -523,12 +523,6 @@ function checkNameMapping(instructorName) {
     "Silva,K.G": "Katie Silva-Chavez",
     "McGuinness,A": "Aims McGuinness",
     // page 12
-
-    // Example of direct ID mapping (more reliable):
-    // "Smith,J.": "ID:2367890",
-
-    // Add more mappings as discovered:
-    // "Professor,X.": "Full Name on RMP",
   };
 
   return nameMapping[instructorName] || null;
@@ -536,7 +530,7 @@ function checkNameMapping(instructorName) {
 
 // Search by exact name
 async function searchByExactName(fullName, originalInstructorName) {
-  console.log(`🎯 Searching for exact mapped name: "${fullName}"`);
+  console.log(`Searching for exact mapped name: "${fullName}"`);
 
   try {
     // Search using the exact full name
@@ -617,20 +611,20 @@ function normalizeInstructorName(name) {
     // Clean up periods from initials for better processing
     const cleanInitials = firstInitials.replace(/\./g, "");
 
-    console.log(`📝 Normalizing "${name}" → "${cleanInitials} ${lastName}"`);
+    console.log(`Normalizing "${name}" → "${cleanInitials} ${lastName}"`);
 
     // Special handling for common cases where initials don't match
     // For "Lee,D." we need to ensure we search for "David Lee" not just "D Lee"
     if (cleanInitials.length === 1) {
       console.log(
-        `📝 Single initial detected: "${cleanInitials}". Creating expanded search.`
+        `Single initial detected: "${cleanInitials}". Creating expanded search.`
       );
     }
 
     return `${cleanInitials} ${lastName}`;
   }
 
-  console.log(`📝 No normalization needed for "${name}"`);
+  console.log(`No normalization needed for "${name}"`);
   return name;
 }
 
@@ -662,7 +656,7 @@ function createSearchStrings(nameComponents) {
     ["D", "J", "M", "R", "S"].includes(firstName.toUpperCase())
   ) {
     const commonNames = getTopNamesForInitial(firstName);
-    console.log(`🔤 Adding limited expansion for "${firstName}":`, commonNames);
+    console.log(`Adding limited expansion for "${firstName}":`, commonNames);
 
     for (const commonName of commonNames.slice(0, 2)) {
       // Only top 2
@@ -671,7 +665,7 @@ function createSearchStrings(nameComponents) {
   }
 
   console.log(
-    `🔍 Created search strings for "${firstName} ${lastName}":`,
+    `Created search strings for "${firstName} ${lastName}":`,
     searchStrings
   );
   return searchStrings;
@@ -736,7 +730,7 @@ function filterByDepartmentContext(professors, department) {
     department.toLowerCase(),
   ];
   console.log(
-    `🏫 Looking for professors related to ${department}: ${relatedTerms.join(
+    `Looking for professors related to ${department}: ${relatedTerms.join(
       ", "
     )}`
   );
@@ -750,7 +744,7 @@ function filterByDepartmentContext(professors, department) {
           const tagName = tag.tagName.toLowerCase();
           if (relatedTerms.some((term) => tagName.includes(term))) {
             console.log(
-              `🏷️ Professor ${professor.firstName} ${professor.lastName} has relevant tag: ${tag.tagName}`
+              `Professor ${professor.firstName} ${professor.lastName} has relevant tag: ${tag.tagName}`
             );
             return true;
           }
@@ -792,7 +786,7 @@ function matchesWithInitial(professor, normalizedQuery) {
   }
 
   console.log(
-    `✅ Initial match: "${normalizedQuery}" matches "${professorFullName}"`
+    `Initial match: "${normalizedQuery}" matches "${professorFullName}"`
   );
   return true;
 }
@@ -827,7 +821,7 @@ function simpleNameMatch(professorName, queryName) {
 
   if (matches) {
     console.log(
-      `✅ Simple match: "${queryName}" matches "${professorName}" (same last name + first initial)`
+      `Simple match: "${queryName}" matches "${professorName}" (same last name + first initial)`
     );
   }
 
@@ -836,11 +830,11 @@ function simpleNameMatch(professorName, queryName) {
 
 // Search professor
 async function searchProfessor(name) {
-  console.log(`🔍 Searching RMP API for: "${name}"`);
+  console.log(`Searching RMP API for: "${name}"`);
 
   // TEMPORARY: Test basic connectivity first
   try {
-    console.log(`🧪 Testing basic RMP API connectivity...`);
+    console.log(`Testing basic RMP API connectivity...`);
     const testResponse = await fetch(
       "https://www.ratemyprofessors.com/graphql",
       {
@@ -856,11 +850,11 @@ async function searchProfessor(name) {
         }),
       }
     );
-    console.log(`🧪 Basic connectivity test status: ${testResponse.status}`);
+    console.log(`Basic connectivity test status: ${testResponse.status}`);
     const testData = await testResponse.json();
-    console.log(`🧪 Basic connectivity test response:`, testData);
+    console.log(`Basic connectivity test response:`, testData);
   } catch (error) {
-    console.error(`🧪 Basic connectivity test failed:`, error);
+    console.error(`Basic connectivity test failed:`, error);
   }
 
   const query = `query NewSearchTeachersQuery(
@@ -910,7 +904,7 @@ async function searchProfessor(name) {
     },
   });
 
-  console.log(`📤 Sending RMP API request with body:`, body);
+  console.log(`Sending RMP API request with body:`, body);
 
   try {
     const controller = new AbortController();
@@ -929,17 +923,17 @@ async function searchProfessor(name) {
 
     clearTimeout(timeoutId);
 
-    console.log(`📥 RMP API response status: ${response.status}`);
+    console.log(`RMP API response status: ${response.status}`);
 
     if (!response.ok) {
       console.error(
-        `❌ RMP API error: HTTP ${response.status}: ${response.statusText}`
+        `RMP API error: HTTP ${response.status}: ${response.statusText}`
       );
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log(`📊 RMP API response data:`, data);
+    console.log(`RMP API response data:`, data);
 
     if (data.errors) {
       throw new Error(
@@ -958,19 +952,19 @@ async function searchProfessor(name) {
         (edge) => edge.node
       );
       console.log(
-        `✅ Successfully extracted ${professors.length} professors from API response`
+        `Successfully extracted ${professors.length} professors from API response`
       );
       return professors;
     }
 
-    console.log(`⚠️ No professors found in API response structure`);
+    console.log(`No professors found in API response structure`);
     return [];
   } catch (error) {
     if (error.name === "AbortError") {
-      console.error(`⏰ RMP API request timed out after 10 seconds`);
+      console.error(`RMP API request timed out after 10 seconds`);
       throw new Error("Request timed out");
     } else {
-      console.error(`❌ RMP API fetch error:`, error);
+      console.error(`RMP API fetch error:`, error);
       throw error;
     }
   }
