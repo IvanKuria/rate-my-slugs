@@ -248,11 +248,7 @@ function setupMutationObserver() {
       if (mutation.type === "childList") {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            console.log(
-              "DOM change detected:",
-              node.tagName,
-              node.className
-            );
+            console.log("DOM change detected:", node.tagName, node.className);
 
             // Check for any course-related additions
             const courseIndicators = [
@@ -278,9 +274,7 @@ function setupMutationObserver() {
     });
 
     if (shouldProcess) {
-      console.log(
-        "DOM changes suggest course results loaded, processing..."
-      );
+      console.log("DOM changes suggest course results loaded, processing...");
       debounceProcess();
     }
   });
@@ -564,6 +558,19 @@ function extractInstructorName(row) {
     "Escobar Vega,L",
     "Silva,K.G",
     "McGuinness,A",
+    "Alexandradinata,A.",
+    "Martinez-Galarce,M.A.",
+    "Fox Tree,J.E.",
+    "McNamara,M.B.",
+    "Mc Kay,S.",
+    "Castillo Trelles,C",
+    "Alfaro Cordoba,M.",
+    "McCourt,A.M.",
+    "Nuila-Chae,S.L.",
+    "Carney-Waddy,S.A.",
+    "Garrecht-Williams,C.K.",
+    "Madeline Lane",
+    "WouldGo,T.",
   ];
 
   const rowText = row.textContent || row.innerText || "";
@@ -578,9 +585,7 @@ function extractInstructorName(row) {
 
   // Look for instructor information in Bootstrap column elements
   const instructorElements = row.querySelectorAll("div.col-xs-6.col-sm-3");
-  console.log(
-    `Found ${instructorElements.length} Bootstrap column elements`
-  );
+  console.log(`Found ${instructorElements.length} Bootstrap column elements`);
 
   for (const element of instructorElements) {
     const text = element.textContent.trim();

@@ -3,7 +3,7 @@
 
 // Global variables
 const UCSC_SCHOOL_ID = "U2Nob29sLTEwNzg="; // Base64 encoded 'School-1078'
-const MAPPING_VERSION = "1.2"; // Increment when manual mappings change
+const MAPPING_VERSION = "1.3"; // Increment when manual mappings change
 let gradeDataMap = {}; // Store grade data
 
 // Initialize the background service
@@ -17,9 +17,7 @@ function setupMessageHandlers() {
     console.log("Background received message:", request);
 
     if (request.action === "getProfessorRating") {
-      console.log(
-        `Processing rating request for: ${request.instructorName}`
-      );
+      console.log(`Processing rating request for: ${request.instructorName}`);
       handleProfessorRatingRequest(request, sender, sendResponse);
       return true; // Keep message channel open for async response
     } else if (request.action === "clearCache") {
@@ -116,10 +114,7 @@ async function handleTestMappingRequest(request, sender, sendResponse) {
 
       // Test search using the mapped name
       const searchResults = await searchProfessor(mappedName);
-      console.log(
-        `Search results for "${mappedName}":`,
-        searchResults.length
-      );
+      console.log(`Search results for "${mappedName}":`, searchResults.length);
 
       if (searchResults.length > 0) {
         const exactMatch = searchResults.find((professor) => {
@@ -245,7 +240,7 @@ async function setCachedRating(instructorName, data) {
       [cacheKey]: {
         data: data,
         timestamp: Date.now(),
-        version: "1.2",
+        version: "1.3",
         mappingVersion: MAPPING_VERSION,
       },
     });
@@ -522,7 +517,29 @@ function checkNameMapping(instructorName) {
     "Escobar Vega,L": "Laura Escobar",
     "Silva,K.G": "Katie Silva-Chavez",
     "McGuinness,A": "Aims McGuinness",
-    // page 12
+
+    // page 12 - none
+
+    // page 13
+    "Alexandradinata,A.": "aris Alexandradinat",
+
+    // page 14
+    "Martinez-Galarce,M.A.": "Marco Martinez-Galarce",
+    "Fox Tree,J.E.": "Jean Foxtree",
+    "McNamara,M.B.": "Megan McNamara",
+    "Mc Kay,S.": "Steven Mc Kay",
+
+    // page 15
+    "Castillo Trelles,C": "Carolina Castillo-Trelles",
+    "Alfaro Cordoba,M.": "Marcela Alfaro-Cordoba",
+
+    // page 16
+    "McCourt,A.M.": "Alexandra McCourt",
+    "Nuila-Chae,S.L.": "Sara Nuila",
+    "Carney-Waddy,S.A.": "Susannah Carney-Waddy",
+    "Garrecht-Williams,C.K.": "Christopher Garrecht-Williams",
+    "Madeline Lane": "Madeline Lane-McKinley",
+    "WouldGo,T.": "Tanner WouldGo",
   };
 
   return nameMapping[instructorName] || null;
