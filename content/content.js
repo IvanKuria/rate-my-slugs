@@ -7,7 +7,6 @@ let cache = new Map();
 let debounceTimer = null;
 
 // Initialize the extension
-console.log("🎓 UCSC RMP Extension loaded");
 init();
 
 // Initialize the extension
@@ -28,19 +27,15 @@ function init() {
 // Setup global debug functions
 function setupGlobalFunctions() {
   window.ucscRMPDebug = function () {
-    console.log("Manual debug trigger");
     return processExistingRows();
   };
 
   window.ucscRMPCheck = function () {
-    console.log("Manual results check");
     return checkForCourseResults();
   };
 
   window.ucscRMPForceSearch = function () {
-    console.log("Force searching for course elements");
     const allDivs = document.querySelectorAll("div");
-    console.log(`Found ${allDivs.length} div elements total`);
 
     // Look for any divs containing instructor-like text
     const courseDivs = Array.from(allDivs).filter((div) => {
@@ -52,30 +47,16 @@ function setupGlobalFunctions() {
       );
     });
 
-    console.log(`Found ${courseDivs.length} divs with course-like content`);
-    courseDivs.forEach((div, idx) => {
-      if (idx < 3) {
-        console.log(`Course Div ${idx + 1}:`, {
-          tag: div.tagName,
-          className: div.className,
-          id: div.id,
-          text: div.textContent.substring(0, 100),
-        });
-      }
-    });
-
     return courseDivs;
   };
 
   window.ucscRMPRefresh = function (instructorName) {
-    console.log(`Refreshing data for: ${instructorName}`);
     chrome.runtime.sendMessage(
       {
         action: "refreshProfessor",
         instructorName: instructorName,
       },
       (response) => {
-        console.log("Refresh response:", response);
         // Reload the page to see updated data
         window.location.reload();
       }
@@ -83,69 +64,43 @@ function setupGlobalFunctions() {
   };
 
   window.ucscRMPTestMapping = function (name) {
-    console.log(`Testing mapping for: "${name}"`);
     chrome.runtime
       .sendMessage({
         action: "testMapping",
         instructorName: name,
       })
       .then((result) => {
-        console.log(`Test result:`, result);
+        console.log("Test result:", result);
       });
   };
 
   window.ucscRMPClearCache = function () {
-    console.log(`Clearing all cached ratings...`);
     chrome.runtime
       .sendMessage({
         action: "clearCache",
       })
       .then((result) => {
-        console.log(`Cache cleared:`, result);
+        console.log("Cache cleared:", result);
       });
   };
 
   window.ucscRMPCacheStats = function () {
-    console.log(`Getting cache statistics...`);
     chrome.runtime
       .sendMessage({
         action: "getCacheStats",
       })
       .then((result) => {
         if (result.status === "success") {
-          console.log(`Cache Stats:`, result.stats);
-          console.log(`Total entries: ${result.stats.totalEntries}`);
-          console.log(`Total size: ${result.stats.totalSize} bytes`);
-          if (result.stats.entries.length > 0) {
-            console.log(`Cached professors:`, result.stats.entries);
-          }
+          console.log("Cache stats:", result.stats);
         }
       });
   };
 
   window.ucscRMPInspectCache = function () {
-    console.log("🔍Inspecting cache...");
     chrome.storage.local.get(null, (items) => {
       console.log("Chrome storage contents:", items);
-      const keys = Object.keys(items);
-      if (keys.length === 0) {
-        console.log("Cache is empty");
-      } else {
-        console.log(`Found ${keys.length} cached items:`);
-        keys.forEach((key) => {
-          console.log(`  - ${key}:`, items[key]);
-        });
-      }
     });
   };
-
-  console.log("Debug functions available:");
-  console.log("ucscRMPDebug() - trigger normal processing");
-  console.log("ucscRMPCheck() - check if results detected");
-  console.log("ucscRMPForceSearch() - force search for course elements");
-  console.log('ucscRMPRefresh("LastName,F.") - refresh specific professor');
-  console.log("ucscRMPClearCache() - clear all cached data");
-  console.log(" ucscRMPInspectCache() - see what is currently cached");
 }
 
 // Wait for course results to load
@@ -155,20 +110,12 @@ function waitForCourseResults() {
   const isIframePage = window.location.href.includes("pisa.ucsc.edu");
 
   if (!isMainEnrollmentPage && !isIframePage) {
-    console.log("Not on enrollment page or iframe, skipping");
     return;
   }
-
-  if (isIframePage) {
-    console.log("On iframe page - this is where course results should be!");
-  }
-
-  console.log("On enrollment page, checking for course results...");
 
   // Check if course results are already loaded
   const hasResults = checkForCourseResults();
   if (hasResults) {
-    console.log("Course results already loaded, processing immediately");
     processExistingRows();
     return;
   }
@@ -179,20 +126,12 @@ function waitForCourseResults() {
 
   const checkInterval = setInterval(() => {
     attempts++;
-    console.log(
-      `Waiting for course results (attempt ${attempts}/${maxAttempts})`
-    );
 
     const hasResults = checkForCourseResults();
     if (hasResults) {
-      console.log("Course results detected! Processing rows...");
-      const foundRows = processExistingRows();
-      console.log(`Stopping check - found ${foundRows} course rows`);
+      processExistingRows();
       clearInterval(checkInterval);
     } else if (attempts >= maxAttempts) {
-      console.log(
-        "Stopping check - max attempts reached without finding course results"
-      );
       clearInterval(checkInterval);
     }
   }, 1000); // Check every 1 second
@@ -216,9 +155,6 @@ function checkForCourseResults() {
   for (const indicator of indicators) {
     const elements = document.querySelectorAll(indicator);
     if (elements.length > 0) {
-      console.log(
-        `Course results indicator found: '${indicator}' (${elements.length} elements)`
-      );
       return true;
     }
   }
@@ -230,12 +166,7 @@ function checkForCourseResults() {
     pageText.includes(keyword)
   );
 
-  if (hasResultKeywords) {
-    console.log("Course results detected by keywords");
-    return true;
-  }
-
-  return false;
+  return hasResultKeywords;
 }
 
 // Setup mutation observer
@@ -248,8 +179,6 @@ function setupMutationObserver() {
       if (mutation.type === "childList") {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            console.log("DOM change detected:", node.tagName, node.className);
-
             // Check for any course-related additions
             const courseIndicators = [
               "div.panel.panel-default.row",
@@ -263,7 +192,6 @@ function setupMutationObserver() {
                 (node.matches && node.matches(indicator)) ||
                 (node.querySelector && node.querySelector(indicator))
               ) {
-                console.log(`Course-related element detected: ${indicator}`);
                 shouldProcess = true;
                 break;
               }
@@ -274,7 +202,6 @@ function setupMutationObserver() {
     });
 
     if (shouldProcess) {
-      console.log("DOM changes suggest course results loaded, processing...");
       debounceProcess();
     }
   });
@@ -285,8 +212,6 @@ function setupMutationObserver() {
     attributes: true,
     attributeOldValue: true,
   });
-
-  console.log("MutationObserver set up to watch for DOM changes");
 }
 
 // Debounce processing
@@ -314,128 +239,19 @@ function processExistingRows() {
 
   for (const selector of courseRowSelectors) {
     const elements = document.querySelectorAll(selector);
-    console.log(
-      `Trying selector '${selector}': found ${elements.length} elements`
-    );
-
     if (elements.length > 0) {
       courseRows = elements;
       usedSelector = selector;
-      console.log(`Using selector: ${selector} (${elements.length} rows)`);
       break;
     }
   }
 
   if (courseRows.length === 0) {
-    console.log("No course rows found with any selector");
-    // Try to find any divs that might be course rows
-    const allPanels = document.querySelectorAll('div[class*="panel"]');
-    const allRows = document.querySelectorAll('div[class*="row"]');
-    console.log(
-      `🔍 Found ${allPanels.length} panel elements and ${allRows.length} row elements on page`
-    );
-
-    // Debug: show what the panel elements actually look like
-    if (allPanels.length > 0) {
-      console.log("Sample panel elements:");
-      allPanels.forEach((panel, index) => {
-        if (index < 5) {
-          // Show first 5
-          console.log(
-            `Panel ${index + 1}:`,
-            panel.className,
-            "|",
-            panel.textContent.substring(0, 100)
-          );
-        }
-      });
-    }
-
-    // Let's try to find ANY elements that might contain course information
-    console.log("Searching for ANY elements that might be course rows...");
-
-    // Search for elements containing instructor-like text
-    const allElements = document.querySelectorAll("*");
-    const potentialCourseElements = [];
-
-    allElements.forEach((el) => {
-      const text = el.textContent || "";
-      // More comprehensive search patterns
-      if (
-        text.includes("Instructor:") ||
-        text.includes("Credits:") ||
-        text.includes("Section:") ||
-        text.includes("Enroll") ||
-        text.includes("Units:") ||
-        text.includes("Class:") ||
-        text.includes("Component:") ||
-        /[A-Z][a-z]+,[A-Z]\.?/.test(text) || // Name pattern like "Simons,J."
-        /\b[A-Z]{2,4}\s*\d{1,3}[A-Z]?\b/.test(text) || // Course codes like "CMPS 101"
-        /\d{4}\s*-\s*\d{2}\s*-\s*\d{2}/.test(text) || // Dates
-        /\d+\s*Units/.test(text)
-      ) {
-        // Units text
-        potentialCourseElements.push(el);
-      }
-    });
-
-    console.log(
-      `Found ${potentialCourseElements.length} elements with course-like content`
-    );
-
-    if (potentialCourseElements.length > 0) {
-      console.log("Sample course-like elements:");
-      potentialCourseElements.slice(0, 5).forEach((el, idx) => {
-        console.log(`Course Element ${idx + 1}:`);
-        console.log(`Tag: ${el.tagName}`);
-        console.log(`Class: ${el.className}`);
-        console.log(`ID: ${el.id}`);
-        console.log(`Text: ${el.textContent.substring(0, 100)}...`);
-        console.log(
-          `Parent: ${el.parentElement?.tagName}.${el.parentElement?.className}`
-        );
-        console.log("---");
-      });
-    }
-
-    // Also check for common table/grid structures
-    const tableSelectors = [
-      "table tr",
-      "tbody tr",
-      '[role="row"]',
-      '[role="gridcell"]',
-      "tr",
-      "td",
-    ];
-
-    console.log("Checking for table/grid structures:");
-    tableSelectors.forEach((selector) => {
-      const elements = document.querySelectorAll(selector);
-      console.log(`${selector}: ${elements.length} elements`);
-    });
-
     return 0;
   }
 
-  // Debug: Show ALL extracted instructor names first
-  console.log(
-    `DEBUG: Extracting ALL instructor names from ${courseRows.length} rows:`
-  );
   courseRows.forEach((row, index) => {
-    const name = extractInstructorName(row);
-    if (name) {
-      console.log(`  Row ${index + 1}: "${name}"`);
-      if (name.toLowerCase().includes("simons")) {
-        console.log(`FOUND SIMONS IN ROW ${index + 1}!`);
-      }
-    }
-  });
-
-  courseRows.forEach((row, index) => {
-    console.log(`Processing row ${index + 1}:`, row);
-
     if (processedRows.has(row)) {
-      console.log(`Row ${index + 1} already processed, skipping`);
       return; // Already processed
     }
 
@@ -465,7 +281,6 @@ function extractCourseDepartment(row) {
     // Match patterns like "AM 11B", "ECON 100A", "PHYS 5A", etc.
     const deptMatch = text.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
     if (deptMatch) {
-      console.log(`🏫 Found department from title: ${deptMatch[1]}`);
       return deptMatch[1];
     }
   }
@@ -474,11 +289,9 @@ function extractCourseDepartment(row) {
   const departmentRowText = row.textContent;
   const deptMatch = departmentRowText.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
   if (deptMatch) {
-    console.log(`Found department from row text: ${deptMatch[1]}`);
     return deptMatch[1];
   }
 
-  console.log(`No department found in row`);
   return null;
 }
 
@@ -494,7 +307,6 @@ function extractCourseCode(row) {
     // Match patterns like "AM 11B", "ECON 100A", "PHYS 5A", etc.
     const codeMatch = text.match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
     if (codeMatch) {
-      console.log(`Found course code: ${codeMatch[2]}`);
       return codeMatch[2];
     }
   }
@@ -503,11 +315,9 @@ function extractCourseCode(row) {
   const rowText = row.textContent;
   const codeMatch = rowText.match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
   if (codeMatch) {
-    console.log(`Found course code from row text: ${codeMatch[2]}`);
     return codeMatch[2];
   }
 
-  console.log(`No course code found in row`);
   return null;
 }
 
@@ -576,25 +386,18 @@ function extractInstructorName(row) {
   const rowText = row.textContent || row.innerText || "";
   for (const mappedName of manualMappingNames) {
     if (rowText.includes(mappedName)) {
-      console.log(
-        `Found manually mapped instructor: ${mappedName} (bypassing parsing)`
-      );
       return mappedName;
     }
   }
 
   // Look for instructor information in Bootstrap column elements
   const instructorElements = row.querySelectorAll("div.col-xs-6.col-sm-3");
-  console.log(`Found ${instructorElements.length} Bootstrap column elements`);
 
   for (const element of instructorElements) {
     const text = element.textContent.trim();
-    console.log(`Checking column element: "${text}"`);
 
     // Check if this element contains instructor information
     if (text.includes("Instructor:") || text.includes("Professor:")) {
-      console.log("Found instructor-related column!");
-
       // Extract instructor name using patterns
       const namePatterns = [
         /([A-Z][a-z-]+,[A-Z]\.?)/g, // "Fehren-Schmitz,L." or "Simons,J."
@@ -615,7 +418,6 @@ function extractInstructorName(row) {
           });
 
           if (validNames.length > 0) {
-            console.log(`Extracted instructor name: ${validNames[0]}`);
             return validNames[0];
           }
         }
@@ -624,10 +426,6 @@ function extractInstructorName(row) {
   }
 
   // Fallback: search entire row text for instructor names
-  console.log(
-    `Fallback: searching entire row text: "${rowText.substring(0, 100)}..."`
-  );
-
   const namePatterns = [
     /([A-Z][a-z-]+,[A-Z]\.?)/g, // "Fehren-Schmitz,L." or "Simons,J."
     /([A-Z][a-z-]+,\s*[A-Z]\.?)/g, // "Fehren-Schmitz, L." or "Simons, J."
@@ -648,13 +446,11 @@ function extractInstructorName(row) {
       });
 
       if (validNames.length > 0) {
-        console.log(`Found instructor name in row text: ${validNames[0]}`);
         return validNames[0];
       }
     }
   }
 
-  console.log("No instructor name found in row");
   return null;
 }
 
@@ -670,37 +466,14 @@ async function processInstructor(row, instructorName, department = null) {
   row.appendChild(loadingCard);
 
   try {
-    // Extract course info for grade data lookup
-    const courseDept = extractCourseDepartment(row);
-    const courseCode = extractCourseCode(row);
-    const fullClassName =
-      courseDept && courseCode ? `${courseDept} ${courseCode}` : null;
-
-    console.log(
-      `Fetching data for: ${instructorName} (Department: ${department}, Class: ${fullClassName})`
-    );
-
-    // First get RMP data to get the matchedName
+    // Get RMP data
     const rmpData = await fetchRMPRating(instructorName, department);
 
-    // Then get grade data using the matchedName from RMP results
-    let gradeData = null;
-    if (
-      rmpData &&
-      rmpData.status === "success" &&
-      rmpData.matchedName &&
-      fullClassName
-    ) {
-      gradeData = await fetchGradeData(rmpData.matchedName, fullClassName);
-    }
-
-    console.log(`Received data:`, { rmpData, gradeData });
-
-    // Update card with both datasets
-    updateRatingCard(loadingCard, rmpData, gradeData);
+    // Update card with RMP data
+    updateRatingCard(loadingCard, rmpData);
   } catch (error) {
     console.error("Error getting professor data:", error);
-    updateRatingCard(loadingCard, { status: "error" }, null);
+    updateRatingCard(loadingCard, { status: "error" });
   }
 }
 
@@ -715,35 +488,6 @@ async function fetchRMPRating(instructorName, department) {
     return response;
   } catch (error) {
     console.error("Error fetching RMP rating:", error);
-    return null;
-  }
-}
-
-// Fetch grade data
-async function fetchGradeData(matchedName, className) {
-  if (!className || !matchedName) {
-    console.log(
-      "No class name or matched name available for grade data lookup"
-    );
-    return null;
-  }
-
-  try {
-    const response = await chrome.runtime.sendMessage({
-      action: "getGradeData",
-      matchedName: matchedName,
-      className: className,
-    });
-
-    // Check if response exists and has the expected structure
-    if (response && response.gradeData !== undefined) {
-      return response.gradeData;
-    } else {
-      console.log("No grade data found for:", matchedName, className);
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching grade data:", error);
     return null;
   }
 }
@@ -778,7 +522,7 @@ function createRatingCard(status, instructorName) {
 }
 
 // Update rating card
-function updateRatingCard(card, rmpData, gradeData) {
+function updateRatingCard(card, rmpData) {
   const content = card.querySelector(".rmp-content");
   card.dataset.status = rmpData?.status || "loading"; // Use rmpData status
 
@@ -806,8 +550,8 @@ function updateRatingCard(card, rmpData, gradeData) {
           <span class="slug-wrapper">
             <img src="${slugUrl}" class="slug-icon slug-empty" alt="slug empty">
             <img src="${slugUrl}" class="slug-icon slug-fill" style="clip-path: inset(0 ${
-          100 - percent
-        }% 0 0);" alt="slug partial">
+100 - percent
+}% 0 0);" alt="slug partial">
           </span>`;
       } else {
         // empty slug
@@ -838,7 +582,6 @@ function updateRatingCard(card, rmpData, gradeData) {
 
     const ratingClass = getRatingColorClass(rating.overallRating);
     const difficultyClass = getDifficultyColorClass(rating.difficulty);
-    const slugStisticsURL = "https://slugtistics.com/";
 
     content.innerHTML = `
       <span class="rmp-inline">
@@ -849,7 +592,6 @@ function updateRatingCard(card, rmpData, gradeData) {
         <span class="rmp-rating-value">would take again</span>
         <span class="rmp-review-value">(${rating.numRatings} reviews)</span>
         <a href="${rating.rmpUrl}" target="_blank" class="rmp-link">👤 View Profile</a>
-        <a href="${slugStisticsURL}" target="_blank" class="rmp-link">📶 View Grade Distr</a>
       </span>
     `;
   } else if (rmpData?.status === "no-profile") {
@@ -857,27 +599,4 @@ function updateRatingCard(card, rmpData, gradeData) {
   } else if (rmpData?.status === "error") {
     content.innerHTML = `<span class="rmp-error">Rate My Professors: Unable to load ratings</span>`;
   }
-
-  // Add grade data display if available
-  if (gradeData) {
-    const gradeSection = createGradeSection(gradeData);
-    content.appendChild(gradeSection);
-  }
-}
-
-// Create grade section
-function createGradeSection(gradeData) {
-  const gradeSection = document.createElement("div");
-  gradeSection.className = "rmp-grade-data";
-
-  gradeSection.innerHTML = `
-    <div class="grade-header">Class Performance</div>
-    <div class="grade-stats">
-      <span class="grade-gpa">${gradeData.gpa} GPA</span>
-      <span class="grade-students">${gradeData.students} students</span>
-      <span class="grade-quarters">${gradeData.quarters} quarters</span>
-    </div>
-  `;
-
-  return gradeSection;
 }
