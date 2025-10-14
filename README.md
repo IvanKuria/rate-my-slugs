@@ -2,30 +2,60 @@
 
 A Chrome extension that automatically displays Rate My Professors ratings for UCSC courses on MyUCSC enrollment pages.
 
+Built with **React** and **Webpack** for a modern, maintainable codebase.
+
 ## Features
 
 - **Automatic Detection**: Finds course rows and extracts instructor names
 - **Real-time Ratings**: Shows RMP ratings directly on the course selection page
-- **Smart Caching**: Caches results for 24 hours to reduce API calls
+- **Smart Caching**: Caches results for 30 days to reduce API calls
 - **Clean UI**: Modern, minimalist design that fits with the page
 - **Error Handling**: Graceful handling of missing profiles and network issues
+- **React Components**: Built with modern React functional components and hooks
+
+## Tech Stack
+
+- React 18
+- Webpack 5
+- Babel
+- Chrome Extension Manifest V3
 
 ## Installation
 
 ### Development Mode
 
 1. Clone or download this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the extension folder
-5. The extension will now be active on MyUCSC pages
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Build the extension:
+   ```bash
+   npm run build
+   ```
+4. Open Chrome and go to `chrome://extensions/`
+5. Enable "Developer mode" in the top right
+6. Click "Load unpacked" and select the `dist` folder
+7. The extension will now be active on MyUCSC pages
+
+### Development with Auto-rebuild
+
+For development with automatic rebuilding on file changes:
+```bash
+npm run dev
+```
+This will watch for changes and rebuild automatically. You'll need to refresh the extension in Chrome after each build.
 
 ### Production Installation
 
 *Coming soon - will be available on Chrome Web Store*
 
-### Zip File Creation
-Run this command in the directory: `zip -r ucsc-rmp-extension.zip manifest.json content/ background/ styles.css icons/ -x "*.DS_Store"`
+### Zip File Creation for Distribution
+```bash
+npm run build
+cd dist
+zip -r ../ucsc-rmp-extension.zip . -x "*.DS_Store"
+```
 
 ## Usage
 
@@ -84,22 +114,58 @@ Run this command in the directory: `zip -r ucsc-rmp-extension.zip manifest.json 
 
 ### File Structure
 ```
-├── manifest.json      # Extension configuration
-├── content.js         # Content script for DOM manipulation
-├── background.js      # Service worker for API calls
-├── styles.css         # Extension styling
-├── README.md          # This file
-└── icons/             # Extension icons (placeholder)
+├── src/
+│   ├── components/          # React components
+│   │   ├── RatingCard.jsx   # Main rating card component
+│   │   └── SlugRating.jsx   # Slug rating visualization
+│   ├── content/             # Content script
+│   │   ├── index.js         # Entry point
+│   │   └── contentScript.js # DOM manipulation & logic
+│   └── background/          # Background service worker
+│       └── background.js    # API calls & caching
+├── icons/                   # Extension icons
+├── manifest.json            # Extension configuration
+├── styles.css               # Extension styling
+├── webpack.config.js        # Webpack configuration
+├── package.json             # Dependencies & scripts
+└── README.md                # This file
 ```
 
 ### Building
-No build process required - this is a vanilla JavaScript extension.
+
+Build the extension:
+```bash
+npm run build
+```
+
+Development mode with watch:
+```bash
+npm run dev
+```
+
+Clean build artifacts:
+```bash
+npm run clean
+```
 
 ### Testing
-1. Load the extension in development mode
-2. Navigate to MyUCSC enrollment page
-3. Check browser console for debug messages
-4. Verify rating cards appear and function correctly
+1. Build the extension: `npm run build`
+2. Load the `dist` folder in Chrome extensions (Developer mode)
+3. Navigate to MyUCSC enrollment page
+4. Check browser console for debug messages
+5. Verify rating cards appear and function correctly
+
+### Debug Functions
+
+The extension provides several debug functions accessible from the browser console:
+- `ucscRMPDebug()` - Manually trigger processing of course rows
+- `ucscRMPCheck()` - Check if course results are detected
+- `ucscRMPForceSearch()` - Force search for course elements
+- `ucscRMPRefresh(instructorName)` - Refresh cache for specific instructor
+- `ucscRMPTestMapping(name)` - Test name mapping for an instructor
+- `ucscRMPClearCache()` - Clear all cached ratings
+- `ucscRMPCacheStats()` - Display cache statistics
+- `ucscRMPInspectCache()` - Inspect Chrome storage contents
 
 ## Contributing
 
