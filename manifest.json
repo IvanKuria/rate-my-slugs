@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "RateMy Slugs",
-  "version": "1.1.1",
+  "name": "Rate My Slugs",
+  "version": "1.2.0",
   "description": "Shows Rate My Professors ratings for UCSC courses on MyUCSC enrollment pages",
-  
+
   "permissions": ["storage"],
 
   "host_permissions": [
@@ -11,35 +11,24 @@
     "https://pisa.ucsc.edu/*",
     "https://www.ratemyprofessors.com/*"
   ],
-  
+
   "content_scripts": [
     {
-      "matches": [
-        "https://my.ucsc.edu/*"
-      ],
-      "js": ["content/content.js"],
-      "css": ["styles.css"],
-      "run_at": "document_idle",
-      "all_frames": true
-    },
-    {
-      "matches": [
-        "https://pisa.ucsc.edu/*"
-      ],
+      "matches": ["https://my.ucsc.edu/*", "https://pisa.ucsc.edu/*"],
       "js": ["content/content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
       "all_frames": true
     }
   ],
-  
+
   "background": {
     "service_worker": "background/background.js"
   },
-  
+
   "web_accessible_resources": [
     {
-      "resources": ["icons/sammy/*.png"],
+      "resources": ["icons/sammy/*.png", "data/*.json"],
       "matches": ["https://my.ucsc.edu/*", "https://pisa.ucsc.edu/*"]
     }
   ],

@@ -4,11 +4,18 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
   entry: {
     content: './src/content/index.js',
-    background: './src/background/background.js'
+    background: './src/background/background.js',
+    myScheduler: './src/content/myScheduler.js'
   },
+  devtool: 'source-map',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name]/[name].js',
+    filename: (pathData) => {
+      if (pathData.chunk.name === 'myScheduler') {
+        return 'content/myScheduler.js';
+      }
+      return '[name]/[name].js';
+    },
     clean: true
   },
   module: {
@@ -40,7 +47,8 @@ module.exports = {
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'icons', to: 'icons' },
-        { from: 'styles.css', to: 'styles.css' }
+        { from: 'styles.css', to: 'styles.css' },
+        { from: 'src/data', to: 'data' }
       ]
     })
   ],

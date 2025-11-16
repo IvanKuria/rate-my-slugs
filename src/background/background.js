@@ -3,6 +3,7 @@
 
 const UCSC_SCHOOL_ID = 'U2Nob29sLTEwNzg='; // Base64 encoded 'School-1078'
 const MAPPING_VERSION = '1.2';
+const CACHE_VERSION = '1.3';
 
 // Message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -174,7 +175,13 @@ async function getCachedRating(instructorName) {
       checkNameMapping(instructorName) &&
       (!cachedData.mappingVersion || cachedData.data.status === 'no-profile');
 
-    if (isExpired || mappingChanged || hasNewMapping) {
+    const cacheVersionChanged = !cachedData.version || cachedData.version !== CACHE_VERSION;
+
+    const reviewsMissing =
+      cachedData.data?.status === 'success' &&
+      !Array.isArray(cachedData.data?.rating?.reviews);
+
+    if (isExpired || mappingChanged || hasNewMapping || cacheVersionChanged || reviewsMissing) {
       await chrome.storage.local.remove(cacheKey);
       return null;
     }
@@ -193,7 +200,7 @@ async function setCachedRating(instructorName, data) {
       [cacheKey]: {
         data: data,
         timestamp: Date.now(),
-        version: '1.2',
+        version: CACHE_VERSION,
         mappingVersion: MAPPING_VERSION
       }
     });
@@ -337,6 +344,24 @@ async function fetchProfessorRating(instructorName, department = null) {
 
     const professor = searchResult[0];
     const professorFullName = `${professor.firstName} ${professor.lastName}`;
+    let recentReviews = [];
+
+    try {
+      let reviewLimit = 10;
+      if (typeof professor.numRatings === 'number' && professor.numRatings > 0) {
+        reviewLimit =
+          professor.numRatings < 10
+            ? professor.numRatings
+            : Math.min(professor.numRatings, 50);
+      }
+
+      if (reviewLimit > 0) {
+        recentReviews = await fetchProfessorReviews(professor.legacyId, reviewLimit);
+      }
+    } catch (reviewError) {
+      console.error('Error fetching professor reviews:', reviewError);
+      recentReviews = [];
+    }
 
     const result = {
       status: 'success',
@@ -349,7 +374,8 @@ async function fetchProfessorRating(instructorName, department = null) {
           professor.wouldTakeAgainPercentRounded
         ),
         numRatings: professor.numRatings || 0,
-        rmpUrl: `https://www.ratemyprofessors.com/professor/${professor.legacyId}`
+        rmpUrl: `https://www.ratemyprofessors.com/professor/${professor.legacyId}`,
+        reviews: recentReviews
       }
     };
 
@@ -714,5 +740,76 @@ async function searchProfessor(name) {
     console.error('RMP API fetch error:', error);
     throw error;
   }
+}
+
+
+async function fetchProfessorReviews(legacyId, limit = 10) {
+  const teacherNodeId = typeof btoa === 'function'
+    ? btoa(`Teacher-${legacyId}`)
+    : Buffer.from(`Teacher-${legacyId}`).toString('base64');
+
+  const query = `query TeacherRatingsQuery($id: ID!, $first: Int!) {
+    node(id: $id) {
+      ... on Teacher {
+        ratings(first: $first) {
+          edges {
+            node {
+              id
+              comment
+              date
+              helpfulRating
+              clarityRating
+              difficultyRating
+              wouldTakeAgain
+              class
+            }
+          }
+        }
+      }
+    }
+  }`;
+
+  const body = JSON.stringify({
+    query,
+    variables: {
+      id: teacherNodeId,
+      first: limit
+    }
+  });
+
+  const response = await fetch('https://www.ratemyprofessors.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: 'Basic dGVzdDp0ZXN0'
+    },
+    body
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+
+  if (data.errors) {
+    throw new Error(`GraphQL errors: ${data.errors.map((e) => e.message).join(', ')}`);
+  }
+
+  const ratings =
+    data?.data?.node?.ratings?.edges?.map((edge) => edge.node) || [];
+
+  return ratings.map((rating) => ({
+    id: rating.id,
+    comment: rating.comment || '',
+    createdAt: rating.date || null,
+    ratingValue: null,
+    helpfulRating: rating.helpfulRating ?? null,
+    clarityRating: rating.clarityRating ?? null,
+    difficultyRating: rating.difficultyRating ?? null,
+    wouldTakeAgain: rating.wouldTakeAgain ?? null,
+    className: rating.class || null
+  }));
 }
 
