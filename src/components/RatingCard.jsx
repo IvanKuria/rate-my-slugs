@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import SlugRating from './SlugRating';
+import GradeDistribution from './GradeDistribution';
 
 const COLOR_PRESETS = {
   excellent: {
@@ -56,11 +57,12 @@ const getDifficultyPalette = (value) => {
   return COLOR_PRESETS.bad;
 };
 
-const RatingCard = ({ instructorName, department }) => {
+const RatingCard = ({ instructorName, course }) => {
   const [status, setStatus] = useState('loading');
   const [ratingData, setRatingData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClassFilter, setSelectedClassFilter] = useState('ALL');
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,9 +70,9 @@ const RatingCard = ({ instructorName, department }) => {
         const response = await chrome.runtime.sendMessage({
           action: 'getProfessorRating',
           instructorName: instructorName,
-          department: department
+          department: course ? course.split(' ')[0] : null
         });
-        
+
         setRatingData(response);
         setStatus(response?.status || 'error');
       } catch (error) {
@@ -80,10 +82,11 @@ const RatingCard = ({ instructorName, department }) => {
     };
 
     fetchData();
-  }, [instructorName, department]);
+  }, [instructorName, course]);
 
   const openModal = () => {
     setSelectedClassFilter('ALL');
+    setCurrentReviewIndex(0);
     setIsModalOpen(true);
   };
   const closeModal = () => setIsModalOpen(false);
@@ -124,7 +127,7 @@ const RatingCard = ({ instructorName, department }) => {
         return (
           <div className="rmp-callout-wrapper">
             <button className="rmp-modal-trigger" onClick={openModal}>
-              <span>View Rate My Professors details</span>
+              <span>View Professor Details</span>
               <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
                 <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4 4a.75.75 0 0 1 0 1.06l-4 4a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
               </svg>
@@ -228,90 +231,129 @@ const RatingCard = ({ instructorName, department }) => {
       <div className="rmp-modal-overlay" onClick={closeModal}>
         <div className="rmp-modal rmp-modal-top-right" onClick={(event) => event.stopPropagation()}>
           <header className="rmp-modal-header">
-            <div>
+            <div className="rmp-modal-header-left">
               <h3 className="rmp-modal-title">
                 {ratingData.matchedName || instructorName}
               </h3>
-              <span className="rmp-modal-subtitle">
-                Showing data from Rate My Professors
-              </span>
+              <a
+                className="rmp-view-profile-btn"
+                href={rating.rmpUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View profile
+              </a>
             </div>
             <button className="rmp-modal-close" onClick={closeModal} aria-label="Close ratings modal">
               ×
             </button>
           </header>
 
-          <div className="rmp-modal-summary">
-            <div className={`rmp-summary-card rmp-quality ${overallClass}`} style={qualityCardStyle}>
-              <span className="rmp-summary-label">Quality</span>
-              <div className="rmp-summary-value">
-                <SlugRating rating={overallRatingNumber} />
-                {typeof rating.overallRating === 'number' ? `${rating.overallRating}/5` : 'N/A'}
+          {rating.numRatings === 0 ? (
+            <div className="rmp-no-ratings">
+              <p>Profile exists but no ratings yet.</p>
+              <a
+                className="rmp-leave-rating-btn"
+                href={rating.rmpUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Leave a rating
+              </a>
+            </div>
+          ) : (
+            <>
+              <div className="rmp-modal-summary">
+                <div className={`rmp-summary-card rmp-quality ${overallClass}`} style={qualityCardStyle}>
+                  <span className="rmp-summary-label">Quality</span>
+                  <div className="rmp-summary-value">
+                    <SlugRating rating={overallRatingNumber} />
+                    {typeof rating.overallRating === 'number' ? `${rating.overallRating}/5` : 'N/A'}
+                  </div>
+                </div>
+                <div className={`rmp-summary-card rmp-difficulty ${difficultyClass}`} style={difficultyCardStyle}>
+                  <span className="rmp-summary-label">Difficulty</span>
+                  <span className="rmp-summary-value">
+                    {difficultyScore !== null ? `${difficultyScore.toFixed(1)}/5` : 'N/A'}
+                  </span>
+                </div>
+                <div className="rmp-summary-card rmp-take-again">
+                  <span className="rmp-summary-label">Would take again</span>
+                  <span className="rmp-summary-value rmp-take-again-text">
+                    {takeAgainPercent !== null ? `${takeAgainPercent}%` : 'N/A'}
+                  </span>
+                </div>
+                <div className="rmp-summary-card rmp-total-reviews">
+                  <span className="rmp-summary-label">Total reviews</span>
+                  <span className="rmp-summary-value">{rating.numRatings ?? 'N/A'}</span>
+                </div>
               </div>
-            </div>
-            <div className={`rmp-summary-card rmp-difficulty ${difficultyClass}`} style={difficultyCardStyle}>
-              <span className="rmp-summary-label">Difficulty</span>
-              <span className="rmp-summary-value">
-                {difficultyScore !== null ? `${difficultyScore.toFixed(1)}/5` : 'N/A'}
-              </span>
-            </div>
-            <div className="rmp-summary-card rmp-take-again">
-              <span className="rmp-summary-label">Would take again</span>
-              <span className="rmp-summary-value rmp-take-again-text">
-                {takeAgainPercent !== null ? `${takeAgainPercent}%` : 'N/A'}
-              </span>
-            </div>
-            <div className="rmp-summary-card rmp-total-reviews">
-              <span className="rmp-summary-label">Total reviews</span>
-              <span className="rmp-summary-value">{rating.numRatings ?? 'N/A'}</span>
-            </div>
-          </div>
 
-          <section className="rmp-reviews-section">
-            <header className="rmp-reviews-header">
-              <h4>Most recent reviews</h4>
-              <span>
-                {reviewsShown} of {totalAvailable} shown
-              </span>
-            </header>
-            {uniqueClasses.length > 0 && (
-              <div className="rmp-reviews-filter">
-                <label htmlFor="rmp-class-filter">Filter by class</label>
-                <select
-                  id="rmp-class-filter"
-                  value={selectedClassFilter}
-                  onChange={(event) => setSelectedClassFilter(event.target.value)}
-                >
-                  <option value="ALL">All classes</option>
-                  {uniqueClasses.map((className) => (
-                    <option key={className} value={className}>
-                      {className}
-                    </option>
-                  ))}
-                </select>
+              <div className="rmp-feedback">
+                <a href="mailto:ikuria@ucsc.edu?subject=Rate My Slugs Feedback" className="rmp-feedback-link">
+                  Have feedback? Let me know →
+                </a>
               </div>
-            )}
-            {reviewsToDisplay.length === 0 ? (
-              <div className="rmp-review-empty">
-                {reviews.length === 0
-                  ? 'No written reviews available yet.'
-                  : 'No reviews match the selected class.'}
-              </div>
-            ) : (
-              <div className="rmp-review-list">
-                {reviewsToDisplay.map((review) => renderReview(review))}
-              </div>
-            )}
-          </section>
 
-          <a
-            className="rmp-profile-link"
-            href={rating.rmpUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on Rate My Professors →
-          </a>
+              <GradeDistribution instructorName={instructorName} course={course} />
+            </>
+          )}
+
+          {rating.numRatings > 0 && (
+            <section className="rmp-reviews-section">
+              <header className="rmp-reviews-header">
+                <h4>Reviews</h4>
+                {reviewsToDisplay.length > 0 && (
+                  <span>{currentReviewIndex + 1} of {reviewsToDisplay.length}</span>
+                )}
+              </header>
+              {uniqueClasses.length > 0 && (
+                <div className="rmp-reviews-filter">
+                  <label htmlFor="rmp-class-filter">Filter by class</label>
+                  <select
+                    id="rmp-class-filter"
+                    value={selectedClassFilter}
+                    onChange={(event) => {
+                      setSelectedClassFilter(event.target.value);
+                      setCurrentReviewIndex(0);
+                    }}
+                  >
+                    <option value="ALL">All classes</option>
+                    {uniqueClasses.map((className) => (
+                      <option key={className} value={className}>
+                        {className}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {reviewsToDisplay.length === 0 ? (
+                <div className="rmp-review-empty">
+                  No written reviews available yet.
+                </div>
+              ) : (
+                <div className="rmp-review-carousel">
+                  {renderReview(reviewsToDisplay[currentReviewIndex])}
+                  <div className="rmp-carousel-nav">
+                    <button
+                      className="rmp-carousel-btn"
+                      onClick={() => setCurrentReviewIndex(i => Math.max(0, i - 1))}
+                      disabled={currentReviewIndex === 0}
+                    >
+                      ← Prev
+                    </button>
+                    <button
+                      className="rmp-carousel-btn"
+                      onClick={() => setCurrentReviewIndex(i => Math.min(reviewsToDisplay.length - 1, i + 1))}
+                      disabled={currentReviewIndex === reviewsToDisplay.length - 1}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
         </div>
       </div>,
       document.body

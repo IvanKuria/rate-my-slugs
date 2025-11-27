@@ -229,8 +229,8 @@ function processExistingRows() {
 
     const instructorName = extractInstructorName(row);
     if (instructorName && instructorName !== 'STAFF/TBA') {
-      const department = extractCourseDepartment(row);
-      processInstructor(row, instructorName, department);
+      const course = extractCourseCode(row);
+      processInstructor(row, instructorName, course);
       processedRows.add(row);
     }
   });
@@ -238,22 +238,22 @@ function processExistingRows() {
   return courseRows.length;
 }
 
-// Extract course department
-function extractCourseDepartment(row) {
+// Extract course code (e.g., "CSE 101")
+function extractCourseCode(row) {
   const titleElements = row.querySelectorAll('h3, h2, .course-title, [class*="title"]');
 
   for (const element of titleElements) {
     const text = element.textContent.trim();
-    const deptMatch = text.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
-    if (deptMatch) {
-      return deptMatch[1];
+    const courseMatch = text.match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
+    if (courseMatch) {
+      return `${courseMatch[1]} ${courseMatch[2]}`;
     }
   }
 
-  const departmentRowText = row.textContent;
-  const deptMatch = departmentRowText.match(/([A-Z]{2,5})\s+\d+[A-Z]?/);
-  if (deptMatch) {
-    return deptMatch[1];
+  const rowText = row.textContent;
+  const courseMatch = rowText.match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
+  if (courseMatch) {
+    return `${courseMatch[1]} ${courseMatch[2]}`;
   }
 
   return null;
@@ -390,7 +390,7 @@ function extractInstructorName(row) {
 }
 
 // Process instructor - inject React component
-function processInstructor(row, instructorName, department = null) {
+function processInstructor(row, instructorName, course = null) {
   // Check if we already have a rating card
   if (row.querySelector('.rmp-rating-card')) {
     return;
@@ -403,6 +403,6 @@ function processInstructor(row, instructorName, department = null) {
 
   // Render React component
   const root = createRoot(container);
-  root.render(<RatingCard instructorName={instructorName} department={department} />);
+  root.render(<RatingCard instructorName={instructorName} course={course} />);
 }
 
