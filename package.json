@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "recharts": "^3.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
@@ -27,4 +28,3 @@
     "last 2 Chrome versions"
   ]
 }
-

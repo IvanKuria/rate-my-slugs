@@ -78,9 +78,9 @@
 .slug-wrapper {
   position: relative;
   display: inline-block;
-  width: 18px;
-  height: 18px;
-  margin-right: 2px;
+  width: 14px;
+  height: 14px;
+  margin-right: 1px;
 }
 
 .slug-fill {
@@ -95,11 +95,11 @@
 
 /* Banana slug rating icons */
 .slug-icon {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   display: inline-block;
   vertical-align: middle;
-  margin-right: 2px;
+  margin-right: 1px;
 }
 
 .slug-empty {
@@ -347,9 +347,9 @@
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 30px 60px rgba(15, 23, 42, 0.25);
-  width: min(420px, 90vw);
+  width: min(560px, 90vw);
   max-height: calc(100vh - 64px);
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   animation: rmp-modal-slide-in 0.22s ease-out;
@@ -379,6 +379,12 @@
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
+.rmp-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .rmp-modal-title {
   margin: 0;
   font-size: 20px;
@@ -386,12 +392,27 @@
   color: #0f172a;
 }
 
-.rmp-modal-subtitle {
+.rmp-view-profile-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.rmp-view-profile-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+/* .rmp-modal-subtitle {
   display: block;
   margin-top: 4px;
   font-size: 13px;
   color: #475569;
-}
+} */
 
 .rmp-modal-close {
   background: rgba(255, 255, 255, 0.75);
@@ -420,10 +441,64 @@
 
 .rmp-modal-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 20px 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 16px 24px;
   background: #f8fafc;
+}
+
+.rmp-feedback {
+  padding: 8px 24px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.rmp-feedback-link {
+  font-size: 12px;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.rmp-feedback-link:hover {
+  color: #2563eb;
+}
+
+.rmp-no-ratings {
+  padding: 24px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.rmp-no-ratings p {
+  margin: 0 0 12px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.rmp-leave-rating-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.rmp-leave-rating-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.rmp-modal-summary .rmp-summary-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 16px 12px;
 }
 
 .rmp-summary-card {
@@ -438,7 +513,7 @@
 }
 
 .rmp-summary-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -447,11 +522,11 @@
 }
 
 .rmp-summary-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .rmp-summary-card.rmp-quality .rmp-summary-label,
@@ -507,11 +582,9 @@
 .rmp-reviews-section {
   flex: 1;
   padding: 0 24px 24px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: 380px;
 }
 
 .rmp-reviews-header {
@@ -646,6 +719,41 @@
   font-size: 14px;
 }
 
+.rmp-review-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rmp-carousel-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rmp-carousel-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.rmp-carousel-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: rgba(148, 163, 184, 0.6);
+}
+
+.rmp-carousel-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
   .rmp-modal-overlay {
     padding: 16px;
@@ -665,4 +773,135 @@
     align-items: flex-start;
     gap: 6px;
   }
+}
+
+/* Grade Distribution Styles */
+.grade-dist-section {
+  padding: 0 24px 24px;
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
+  margin-top: 8px;
+}
+
+.grade-dist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0 12px;
+}
+
+.grade-dist-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.grade-dist-course {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grade-dist-loading {
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.grade-dist-empty {
+  padding: 24px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.grade-dist-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.grade-dist-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.grade-dist-filter label {
+  font-weight: 600;
+}
+
+.grade-dist-filter select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: #ffffff;
+  font-size: 13px;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.grade-dist-filter select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.grade-dist-chart {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 8px;
+  margin-bottom: 12px;
+}
+
+.grade-dist-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.grade-dist-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grade-dist-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.grade-dist-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.grade-dist-other {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.grade-dist-other-label {
+  font-weight: 600;
+}
+
+.grade-dist-other-item {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 500;
 }
