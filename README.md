@@ -169,9 +169,4 @@ The extension provides several debug functions accessible from the browser conso
 
 ## Contributing
 
-This is a personal project, but suggestions and improvements are welcome!
-
-## License
-
-This project is proprietary software. See the [LICENSE](LICENSE) file for details. 
-All rights reserved - copying and distribution are prohibited without explicit permission.
+This is a personal project, but feel free to contribute!
