@@ -1,16 +1,24 @@
 {
   "manifest_version": 3,
   "name": "Rate My Slugs",
-  "version": "1.2.0",
-  "description": "Shows Rate My Professors ratings for UCSC courses on MyUCSC enrollment pages",
+  "version": "1.3.0",
+  "description": "Shows Rate My Professors ratings for UCSC courses on MyUCSC enrollment pages as well as grade distribution graphs for each course.",
 
-  "permissions": ["storage"],
+  "permissions": ["storage", "identity"],
 
   "host_permissions": [
     "https://my.ucsc.edu/*",
     "https://pisa.ucsc.edu/*",
-    "https://www.ratemyprofessors.com/*"
+    "https://www.ratemyprofessors.com/*",
+    "https://rate-my-slugs-server.onrender.com/*",
+    "https://campusdirectory.ucsc.edu/*",
+    "https://www.googleapis.com/*"
   ],
+
+  "oauth2": {
+    "client_id": "657446810386-f43dggl4imp84pdo11fgk1ts2gknbjmc.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/calendar.events"]
+  },
 
   "content_scripts": [
     {
@@ -28,7 +36,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["icons/sammy/*.png", "data/*.json"],
+      "resources": ["icons/sammy/*.png", "data/*.json", "images/*"],
       "matches": ["https://my.ucsc.edu/*", "https://pisa.ucsc.edu/*"]
     }
   ],

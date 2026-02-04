@@ -41,7 +41,9 @@ module.exports = {
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'icons', to: 'icons' },
-        { from: 'styles.css', to: 'styles.css' }
+        { from: 'styles.css', to: 'styles.css' },
+        { from: 'src/data', to: 'data' },
+        { from: 'src/images', to: 'images' }
       ]
     })
   ],
