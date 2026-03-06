@@ -44,11 +44,9 @@ export async function fetchCachedCampusDirectoryProfile(uID) {
     const now = Date.now();
 
     if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION_MS) {
-      console.log(`[CACHE HIT] Using cached campus data for ${uID}`);
       return cachedEntry.data;
     }
 
-    console.log(`[CACHE MISS] Fetching new campus data for ${uID}`);
     const apiData = await fetchProfileFromAPI(uID);
 
     const apiResponse = { data: apiData, success: true };

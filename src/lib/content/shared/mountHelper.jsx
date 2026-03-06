@@ -28,7 +28,7 @@ export function renderComponent(mount, Component, props) {
  * Sets up a MutationObserver with debounce that calls callback
  * when new elements matching the selector appear.
  */
-export function setupObserver(selector, callback, debounceMs = 500) {
+export function setupObserver(selector, callback, debounceMs = 150) {
   let timer = null;
 
   const observer = new MutationObserver((mutations) => {

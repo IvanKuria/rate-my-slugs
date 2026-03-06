@@ -1,11 +1,33 @@
-import data from '../../data/prof_uids.json';
+// Caches for bundled JSON data (loaded on first use)
+let profUidsCache = null;
+let researchCache = null;
+let classesCache = null;
+
+/**
+ * Loads professor UIDs from the bundled JSON file.
+ */
+async function loadProfUids() {
+  if (profUidsCache) return profUidsCache;
+
+  const url = chrome.runtime.getURL('data/prof_uids.json');
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return {};
+    profUidsCache = await response.json();
+    return profUidsCache;
+  } catch (e) {
+    console.error('Error loading prof_uids.json:', e);
+    return {};
+  }
+}
 
 /**
  * Resolves a professor's UID from the JSON dataset.
  * Strategy: exact match, then fuzzy match on "Last,F." pattern.
  * Returns "jdoe" (sentinel) if not found.
  */
-export function getUIDFromJson(name) {
+export async function getUIDFromJson(name) {
+  const data = await loadProfUids();
   let uID = "jdoe";
   let value = data[name];
 
@@ -25,7 +47,6 @@ export function getUIDFromJson(name) {
         });
 
         if (matchKey) {
-          console.log(`Fuzzy matched '${name}' to JSON key '${matchKey}'`);
           value = data[matchKey];
         }
       }
@@ -62,11 +83,13 @@ export async function fetchProfessorData(uID, name) {
  * Fetches research topics from the local JSON file.
  */
 export async function fetchLocalResearchData() {
+  if (researchCache) return researchCache;
   const url = chrome.runtime.getURL("data/prof_research_topics.json");
   try {
     const response = await fetch(url);
     if (!response.ok) return {};
-    return await response.json();
+    researchCache = await response.json();
+    return researchCache;
   } catch (e) {
     console.error("Error loading research JSON:", e);
     return {};
@@ -77,11 +100,13 @@ export async function fetchLocalResearchData() {
  * Fetches classes taught from the local JSON file.
  */
 export async function fetchLocalClassesData() {
+  if (classesCache) return classesCache;
   const url = chrome.runtime.getURL("data/prof_classes.json");
   try {
     const response = await fetch(url);
     if (!response.ok) return {};
-    return await response.json();
+    classesCache = await response.json();
+    return classesCache;
   } catch (e) {
     console.error("Error loading classes JSON:", e);
     return {};

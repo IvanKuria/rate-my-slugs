@@ -1,7 +1,7 @@
-import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '../shared/professorResolver';
-import { createMountPoint, renderComponent } from '../shared/mountHelper';
-import { getFirst } from '../../utils/utils';
-import ProfessorCard from '../../components/ProfessorCard';
+import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
+import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
+import { getFirst } from '@/utils/utils';
+import ProfessorCard from '@/components/ProfessorCard';
 
 export const PAGE_CONFIG = {
   panelSelector: ".panel.panel-default",
@@ -59,17 +59,20 @@ export async function renderPage() {
   const panels = document.querySelectorAll(PAGE_CONFIG.panelSelector);
   if (!panels.length) return;
 
-  const researchTopics = await fetchLocalResearchData();
-  const classesTaught = await fetchLocalClassesData();
+  const [researchTopics, classesTaught] = await Promise.all([
+    fetchLocalResearchData(),
+    fetchLocalClassesData(),
+  ]);
 
-  for (const panel of panels) {
-    if (panel.querySelector(".rms-professor-root")) continue;
+  // Process all panels in parallel for faster icon rendering
+  const tasks = Array.from(panels).map(async (panel) => {
+    if (panel.querySelector(".rms-professor-root")) return;
 
     const name = extractProfName(panel);
-    if (!name) continue;
+    if (!name) return;
 
     const course = extractCourseCode(panel);
-    const uID = getUIDFromJson(name);
+    const uID = await getUIDFromJson(name);
 
     // Always fetch — background handles UID-less professors via RMP name search
     let profileDict = null;
@@ -95,7 +98,7 @@ export async function renderPage() {
     }
 
     // Only mount if we got at least some data (campus or RMP)
-    if (!profData && !rateMyProfessorData) continue;
+    if (!profData && !rateMyProfessorData) return;
 
     const target = getMountTarget(panel);
     target.classList.add("prof-panel-relative");
@@ -110,5 +113,7 @@ export async function renderPage() {
       instructorName: name,
       course,
     });
-  }
+  });
+
+  await Promise.allSettled(tasks);
 }

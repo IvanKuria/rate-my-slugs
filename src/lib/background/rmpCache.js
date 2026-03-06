@@ -10,7 +10,6 @@ import Fuse from "fuse.js";
 const RATE_MY_PROFESSORS_ENDPOINT = "https://www.ratemyprofessors.com/graphql";
 const UCSC_SCHOOL_ID = "U2Nob29sLTEwNzg="; // Base64 encoded "School-1078"
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 * 7; // 1 week
-let hasLoggedSuccessfulRmpConnection = false;
 
 // GraphQL query for searching professors
 const RATE_MY_PROFESSORS_QUERY = `query NewSearchTeachersQuery($text: String!, $schoolID: ID) {
@@ -203,11 +202,6 @@ export async function fetchRateMyProfessorData(name, schoolId) {
     }),
   });
 
-  if (!hasLoggedSuccessfulRmpConnection && response.ok) {
-    console.log("RateMyProfessors GraphQL connection successful");
-    hasLoggedSuccessfulRmpConnection = true;
-  }
-
   if (!response.ok) {
     throw new Error(
       `RateMyProfessors request failed with status ${response.status}`,
@@ -242,11 +236,9 @@ export async function fetchCachedRateMyProfessorData(uID, name, schoolId) {
     const now = Date.now();
 
     if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION_MS) {
-      console.log(`[CACHE HIT] Using cached RMP data for ${uID} (${name})`);
       return cachedEntry.data;
     }
 
-    console.log(`[CACHE MISS] Fetching new RMP data for ${uID} (${name})`);
     const apiResponse = await fetchRateMyProfessorData(name, schoolId);
 
     await chrome.storage.local.set({

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import Draggable from "react-draggable";
-import { getFirst, roundToWhole, roundToOneDecimal, formatNumber, StarRating } from "../utils/utils";
-import SlugRating from "./SlugRating";
-import GradeDistribution from "./GradeDistribution";
+import { getFirst, roundToWhole, roundToOneDecimal, formatNumber, StarRating } from "@/utils/utils";
+import SlugRating from "@/components/SlugRating";
+import GradeDistribution from "@/components/GradeDistribution";
 
 // ─── Color presets for gradient summary cards ────────────────────────────────
 

@@ -1,19 +1,21 @@
-import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '../shared/professorResolver';
-import { createMountPoint, renderComponent } from '../shared/mountHelper';
-import { getFirst } from '../../utils/utils';
-import ProfessorCard from '../../components/ProfessorCard';
+import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
+import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
+import { getFirst } from '@/utils/utils';
+import ProfessorCard from '@/components/ProfessorCard';
 
 export const PAGE_CONFIG = {
-  panelSelector: '[id^="trSSR_REGFORM_VW$0_row"]',
+  panelSelector: '[id^="trSTDNT_ENRL_SSVW$0_row"]',
   processedClass: "rms-processed",
 };
 
 /**
- * Extracts professor name from a shopping cart row.
- * Reformats "J. Doe" to "Doe,J." for UID lookup.
+ * Extracts professor name from an enrolled class row.
+ * Similar to shopping cart but may have different element IDs.
  */
 export function extractProfName(panel) {
-  const nameBox = panel.querySelector('[id^="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]');
+  // Try the instructor long name element
+  const nameBox = panel.querySelector('[id^="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]') ||
+                  panel.querySelector('[id*="INSTR_LONG"]');
   if (!nameBox) return null;
 
   const name = nameBox.outerText?.trim();
@@ -32,23 +34,26 @@ export function extractProfName(panel) {
 }
 
 export function getMountTarget(panel) {
-  return panel.querySelector('[id*="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]') || panel;
+  return panel.querySelector('[id*="INSTR_LONG"]') || panel;
 }
 
 export async function renderPage() {
   const panels = document.querySelectorAll(PAGE_CONFIG.panelSelector);
   if (!panels.length) return;
 
-  const researchTopics = await fetchLocalResearchData();
-  const classesTaught = await fetchLocalClassesData();
+  const [researchTopics, classesTaught] = await Promise.all([
+    fetchLocalResearchData(),
+    fetchLocalClassesData(),
+  ]);
 
-  for (const panel of panels) {
-    if (panel.querySelector(".rms-professor-root")) continue;
+  // Process all panels in parallel for faster icon rendering
+  const tasks = Array.from(panels).map(async (panel) => {
+    if (panel.querySelector(".rms-professor-root")) return;
 
     const name = extractProfName(panel);
-    if (!name) continue;
+    if (!name) return;
 
-    const uID = getUIDFromJson(name);
+    const uID = await getUIDFromJson(name);
 
     let profileDict = null;
     try {
@@ -72,7 +77,7 @@ export async function renderPage() {
       classesTaughtList = classesTaught[fullName];
     }
 
-    if (!profData && !rateMyProfessorData) continue;
+    if (!profData && !rateMyProfessorData) return;
 
     const target = getMountTarget(panel);
     panel.classList.add("prof-cart-panel");
@@ -87,5 +92,7 @@ export async function renderPage() {
       instructorName: name,
       course: null,
     });
-  }
+  });
+
+  await Promise.allSettled(tasks);
 }
