@@ -1,14 +1,19 @@
 import { defineConfig } from 'wxt';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   srcDir: 'src',
+  vite: () => ({
+    plugins: [tailwindcss()],
+  }),
   manifest: {
     name: 'Rate My Slugs',
-    version: '1.4.0',
+    version: '2.0.0',
     description:
-      'Shows Rate My Professors ratings for UCSC courses on MyUCSC enrollment pages as well as grade distribution graphs for each course.',
-    permissions: ['storage'],
+      'View professor ratings, grade distributions, and detailed profiles while browsing UCSC courses on MyUCSC.',
+    permissions: ['storage', 'sidePanel'],
+    action: {},
     host_permissions: [
       'https://my.ucsc.edu/*',
       'https://pisa.ucsc.edu/*',

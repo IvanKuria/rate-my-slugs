@@ -4,56 +4,56 @@ import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {
-  panelSelector: '[id^="trSSR_REGFORM_VW$0_row"]',
+  panelSelector: '[id*="INSTR_LONG"], [id*="MTG_INSTR"]',
   processedClass: "rms-processed",
 };
 
 /**
- * Extracts professor name from a shopping cart row.
- * Reformats "J. Doe" to "Doe,J." for UID lookup.
+ * Extracts professor name directly from the instructor element.
+ * This is a catch-all module for pages with instructor elements
+ * that don't match the more specific page modules.
  */
 export function extractProfName(panel) {
-  const nameBox = panel.querySelector('[id^="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]');
-  if (!nameBox) return null;
-
-  const name = nameBox.outerText?.trim();
-  if (!name) return null;
-
-  // Reformat "J. Doe" -> "Doe,J."
-  const reFI = /^([^\s]+)/i;
-  const res = name.match(reFI);
-  if (!res || !res[1]) return null;
-
-  const firstInitial = res[1];
-  const lastName = name.slice(firstInitial.length + 1).trim();
-  if (!lastName) return null;
-
-  return `${lastName},${firstInitial}`;
-}
-
-export function getMountTarget(panel) {
-  return panel.querySelector('[id*="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]') || panel;
+  const name = panel.textContent?.trim();
+  if (!name || name === 'Staff' || name === 'TBA' || name.length < 2) return null;
+  return name;
 }
 
 /**
- * Full render pipeline for the shopping cart page.
- * Phase 1: Immediately render loading skeletons for all panels.
+ * Returns the DOM element to mount the component into.
+ * Since the panel IS the instructor element, mount directly on it.
+ */
+export function getMountTarget(panel) {
+  return panel;
+}
+
+/**
+ * Full render pipeline for generic instructor pages.
+ * Phase 1: Immediately render loading skeletons.
  * Phase 2: Fetch data and update with actual ratings.
  */
 export async function renderPage() {
   const panels = document.querySelectorAll(PAGE_CONFIG.panelSelector);
   if (!panels.length) return;
 
-  // Phase 1: Immediately render loading skeletons for all panels
-  const mounts = [];
+  // Deduplicate: multiple selectors might match the same element
+  const seen = new Set();
+  const uniquePanels = [];
   for (const panel of panels) {
+    if (seen.has(panel)) continue;
+    seen.add(panel);
+    uniquePanels.push(panel);
+  }
+
+  // Phase 1: Immediately render loading skeletons
+  const mounts = [];
+  for (const panel of uniquePanels) {
     if (panel.querySelector('.rms-rating-bar-root')) continue;
 
     const name = extractProfName(panel);
     if (!name) continue;
 
     const target = getMountTarget(panel);
-    panel.classList.add("prof-cart-panel");
     const mount = createMountPoint(target, 'rms-rating-bar-root');
     renderComponent(mount, RatingBar, { professorData: null, loading: true });
     mounts.push({ mount, name, panel });

@@ -4,6 +4,16 @@ let researchCache = null;
 let classesCache = null;
 
 /**
+ * Kicks off all JSON fetches concurrently so data is warm
+ * by the time individual professor lookups happen.
+ */
+export function preloadData() {
+  loadProfUids();
+  fetchLocalResearchData();
+  fetchLocalClassesData();
+}
+
+/**
  * Loads professor UIDs from the bundled JSON file.
  */
 async function loadProfUids() {

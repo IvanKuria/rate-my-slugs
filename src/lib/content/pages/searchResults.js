@@ -1,7 +1,7 @@
 import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
 import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
-import ProfessorCard from '@/components/ProfessorCard';
+import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {
   panelSelector: ".panel.panel-default",
@@ -54,32 +54,45 @@ export function getMountTarget(panel) {
 
 /**
  * Full render pipeline for the search results page.
+ * Phase 1: Immediately render loading skeletons for all panels.
+ * Phase 2: Fetch data and update with actual ratings.
  */
 export async function renderPage() {
   const panels = document.querySelectorAll(PAGE_CONFIG.panelSelector);
   if (!panels.length) return;
 
+  // Phase 1: Immediately render loading skeletons for all panels
+  const mounts = [];
+  for (const panel of panels) {
+    if (panel.querySelector('.rms-rating-bar-root')) continue;
+
+    const name = extractProfName(panel);
+    if (!name) continue;
+
+    const course = extractCourseCode(panel);
+    const target = getMountTarget(panel);
+    target.classList.add("prof-panel-relative");
+    const mount = createMountPoint(target, 'rms-rating-bar-root');
+    renderComponent(mount, RatingBar, { professorData: null, loading: true });
+    mounts.push({ mount, name, panel, course });
+  }
+
+  if (!mounts.length) return;
+
+  // Phase 2: Fetch data and update
   const [researchTopics, classesTaught] = await Promise.all([
     fetchLocalResearchData(),
     fetchLocalClassesData(),
   ]);
 
-  // Process all panels in parallel for faster icon rendering
-  const tasks = Array.from(panels).map(async (panel) => {
-    if (panel.querySelector(".rms-professor-root")) return;
-
-    const name = extractProfName(panel);
-    if (!name) return;
-
-    const course = extractCourseCode(panel);
+  await Promise.allSettled(mounts.map(async ({ mount, name, panel, course }) => {
     const uID = await getUIDFromJson(name);
 
-    // Always fetch — background handles UID-less professors via RMP name search
     let profileDict = null;
     try {
       profileDict = await fetchProfessorData(uID, name);
     } catch (error) {
-      console.error("Error fetching professor data", error);
+      // silently continue — error is non-critical
     }
     if (profileDict?.data?.success === false) {
       profileDict.data = null;
@@ -97,23 +110,24 @@ export async function renderPage() {
       classesTaughtList = classesTaught[fullName];
     }
 
-    // Only mount if we got at least some data (campus or RMP)
-    if (!profData && !rateMyProfessorData) return;
+    // Only remove if ALL data sources returned nothing
+    if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
+      mount.remove();
+      return;
+    }
 
-    const target = getMountTarget(panel);
-    target.classList.add("prof-panel-relative");
-    const mount = createMountPoint(target);
-
-    renderComponent(mount, ProfessorCard, {
-      apiData: profData,
-      rateMyProfessor: rateMyProfessorData,
-      reviews,
-      localResearchTopic: researchTopicText,
-      localClassesTaught: classesTaughtList,
-      instructorName: name,
-      course,
+    // Re-render with actual data
+    renderComponent(mount, RatingBar, {
+      professorData: {
+        apiData: profData,
+        rateMyProfessor: rateMyProfessorData,
+        reviews,
+        localResearchTopic: researchTopicText,
+        localClassesTaught: classesTaughtList,
+        instructorName: name,
+        course,
+      },
+      loading: false,
     });
-  });
-
-  await Promise.allSettled(tasks);
+  }));
 }

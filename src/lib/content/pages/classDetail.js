@@ -4,39 +4,72 @@ import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {
-  panelSelector: '[id^="trSSR_REGFORM_VW$0_row"]',
+  panelSelector: '.PSGROUPBOXWBO, [id*="SSR_CLSRCH_F_WK"]',
   processedClass: "rms-processed",
 };
 
 /**
- * Extracts professor name from a shopping cart row.
- * Reformats "J. Doe" to "Doe,J." for UID lookup.
+ * Extracts professor name from a class detail panel.
+ * Looks for MTG_INSTR elements or text matching "Instructor(s):".
  */
 export function extractProfName(panel) {
-  const nameBox = panel.querySelector('[id^="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]');
-  if (!nameBox) return null;
+  // Try MTG_INSTR elements first (common in class detail views)
+  const instrEl = panel.querySelector('[id*="MTG_INSTR"]');
+  if (instrEl) {
+    const name = instrEl.textContent?.trim();
+    if (name && name !== 'Staff' && name !== 'TBA') return name;
+  }
 
-  const name = nameBox.outerText?.trim();
-  if (!name) return null;
+  // Try looking for "Instructor(s):" label pattern
+  const allText = panel.innerText || '';
+  const instructorMatch = allText.match(/Instructor[s]?:\s*([^\n\r]+)/i);
+  if (instructorMatch && instructorMatch[1]) {
+    const name = instructorMatch[1].trim();
+    if (name && name !== 'Staff' && name !== 'TBA') return name;
+  }
 
-  // Reformat "J. Doe" -> "Doe,J."
-  const reFI = /^([^\s]+)/i;
-  const res = name.match(reFI);
-  if (!res || !res[1]) return null;
+  // Try INSTR_LONG elements
+  const instrLong = panel.querySelector('[id*="INSTR_LONG"]');
+  if (instrLong) {
+    const name = instrLong.textContent?.trim();
+    if (name && name !== 'Staff' && name !== 'TBA') return name;
+  }
 
-  const firstInitial = res[1];
-  const lastName = name.slice(firstInitial.length + 1).trim();
-  if (!lastName) return null;
-
-  return `${lastName},${firstInitial}`;
-}
-
-export function getMountTarget(panel) {
-  return panel.querySelector('[id*="win0divDERIVED_REGFRM1_SSR_INSTR_LONG$"]') || panel;
+  return null;
 }
 
 /**
- * Full render pipeline for the shopping cart page.
+ * Extracts course code from a class detail panel.
+ */
+function extractCourseCode(panel) {
+  // Try common class detail title patterns
+  const titleEl = panel.querySelector('[id*="DERIVED_CLSRCH_DESCR200"]') ||
+                  panel.querySelector('.PAGROUPDIVIDER') ||
+                  panel.querySelector('h2, h3');
+  if (titleEl) {
+    const match = titleEl.textContent.trim().match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
+    if (match) return `${match[1]} ${match[2]}`;
+  }
+
+  // Fallback: scan panel text
+  const rowMatch = panel.textContent.match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
+  if (rowMatch) return `${rowMatch[1]} ${rowMatch[2]}`;
+
+  return null;
+}
+
+/**
+ * Returns the DOM element to mount the component into.
+ * Mounts near the instructor element when possible.
+ */
+export function getMountTarget(panel) {
+  return panel.querySelector('[id*="MTG_INSTR"]') ||
+         panel.querySelector('[id*="INSTR_LONG"]') ||
+         panel;
+}
+
+/**
+ * Full render pipeline for class detail pages.
  * Phase 1: Immediately render loading skeletons for all panels.
  * Phase 2: Fetch data and update with actual ratings.
  */
@@ -44,7 +77,7 @@ export async function renderPage() {
   const panels = document.querySelectorAll(PAGE_CONFIG.panelSelector);
   if (!panels.length) return;
 
-  // Phase 1: Immediately render loading skeletons for all panels
+  // Phase 1: Immediately render loading skeletons
   const mounts = [];
   for (const panel of panels) {
     if (panel.querySelector('.rms-rating-bar-root')) continue;
@@ -52,11 +85,11 @@ export async function renderPage() {
     const name = extractProfName(panel);
     if (!name) continue;
 
+    const course = extractCourseCode(panel);
     const target = getMountTarget(panel);
-    panel.classList.add("prof-cart-panel");
     const mount = createMountPoint(target, 'rms-rating-bar-root');
     renderComponent(mount, RatingBar, { professorData: null, loading: true });
-    mounts.push({ mount, name, panel });
+    mounts.push({ mount, name, panel, course });
   }
 
   if (!mounts.length) return;
@@ -67,7 +100,7 @@ export async function renderPage() {
     fetchLocalClassesData(),
   ]);
 
-  await Promise.allSettled(mounts.map(async ({ mount, name, panel }) => {
+  await Promise.allSettled(mounts.map(async ({ mount, name, panel, course }) => {
     const uID = await getUIDFromJson(name);
 
     let profileDict = null;
@@ -105,7 +138,7 @@ export async function renderPage() {
         localResearchTopic: researchTopicText,
         localClassesTaught: classesTaughtList,
         instructorName: name,
-        course: null,
+        course,
       },
       loading: false,
     });

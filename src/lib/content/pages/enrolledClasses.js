@@ -1,7 +1,7 @@
 import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
 import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
-import ProfessorCard from '@/components/ProfessorCard';
+import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {
   panelSelector: '[id^="trSTDNT_ENRL_SSVW$0_row"]',
@@ -21,7 +21,7 @@ export function extractProfName(panel) {
   const name = nameBox.outerText?.trim();
   if (!name) return null;
 
-  // Reformat "J. Doe" → "Doe,J."
+  // Reformat "J. Doe" -> "Doe,J."
   const reFI = /^([^\s]+)/i;
   const res = name.match(reFI);
   if (!res || !res[1]) return null;
@@ -37,29 +37,46 @@ export function getMountTarget(panel) {
   return panel.querySelector('[id*="INSTR_LONG"]') || panel;
 }
 
+/**
+ * Full render pipeline for the enrolled classes page.
+ * Phase 1: Immediately render loading skeletons for all panels.
+ * Phase 2: Fetch data and update with actual ratings.
+ */
 export async function renderPage() {
   const panels = document.querySelectorAll(PAGE_CONFIG.panelSelector);
   if (!panels.length) return;
 
+  // Phase 1: Immediately render loading skeletons for all panels
+  const mounts = [];
+  for (const panel of panels) {
+    if (panel.querySelector('.rms-rating-bar-root')) continue;
+
+    const name = extractProfName(panel);
+    if (!name) continue;
+
+    const target = getMountTarget(panel);
+    panel.classList.add("prof-cart-panel");
+    const mount = createMountPoint(target, 'rms-rating-bar-root');
+    renderComponent(mount, RatingBar, { professorData: null, loading: true });
+    mounts.push({ mount, name, panel });
+  }
+
+  if (!mounts.length) return;
+
+  // Phase 2: Fetch data and update
   const [researchTopics, classesTaught] = await Promise.all([
     fetchLocalResearchData(),
     fetchLocalClassesData(),
   ]);
 
-  // Process all panels in parallel for faster icon rendering
-  const tasks = Array.from(panels).map(async (panel) => {
-    if (panel.querySelector(".rms-professor-root")) return;
-
-    const name = extractProfName(panel);
-    if (!name) return;
-
+  await Promise.allSettled(mounts.map(async ({ mount, name, panel }) => {
     const uID = await getUIDFromJson(name);
 
     let profileDict = null;
     try {
       profileDict = await fetchProfessorData(uID, name);
     } catch (error) {
-      console.error("Error fetching professor data", error);
+      // silently continue — error is non-critical
     }
     if (profileDict?.data?.success === false) {
       profileDict.data = null;
@@ -77,22 +94,22 @@ export async function renderPage() {
       classesTaughtList = classesTaught[fullName];
     }
 
-    if (!profData && !rateMyProfessorData) return;
+    if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
+      mount.remove();
+      return;
+    }
 
-    const target = getMountTarget(panel);
-    panel.classList.add("prof-cart-panel");
-    const mount = createMountPoint(target, "rms-professor-root");
-
-    renderComponent(mount, ProfessorCard, {
-      apiData: profData,
-      rateMyProfessor: rateMyProfessorData,
-      reviews,
-      localResearchTopic: researchTopicText,
-      localClassesTaught: classesTaughtList,
-      instructorName: name,
-      course: null,
+    renderComponent(mount, RatingBar, {
+      professorData: {
+        apiData: profData,
+        rateMyProfessor: rateMyProfessorData,
+        reviews,
+        localResearchTopic: researchTopicText,
+        localClassesTaught: classesTaughtList,
+        instructorName: name,
+        course: null,
+      },
+      loading: false,
     });
-  });
-
-  await Promise.allSettled(tasks);
+  }));
 }

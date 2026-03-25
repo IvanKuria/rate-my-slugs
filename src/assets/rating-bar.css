@@ -1,0 +1,140 @@
+/**
+ * @file rating-bar.css
+ * Minimal inline rating bar — flat design, no gradients.
+ * Injected into UCSC enrollment pages via content script.
+ */
+
+/* ── Container ── */
+.rms-rating-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
+  user-select: none;
+  white-space: nowrap;
+  margin: 6px 0;
+  padding-left: 12px;
+}
+
+/* ── Rating badge: ★ 4.4 (37) ── */
+.rms-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.rms-star {
+  color: #f59e0b;
+  font-size: 14px;
+}
+
+.rms-score {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rms-count {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* ── Would retake stat: 85% would retake ── */
+.rms-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  font-size: 13px;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.rms-again-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rms-again-label {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* ── Details button ── */
+.rms-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: transparent;
+  color: #374151;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.rms-details:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.rms-details:active {
+  background: #e5e7eb;
+}
+
+.rms-details:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 1px;
+}
+
+.rms-details-text {
+  /* inherits from parent */
+}
+
+.rms-details-arrow {
+  font-size: 14px;
+  transition: transform 0.15s ease;
+}
+
+.rms-details:hover .rms-details-arrow {
+  transform: translateX(2px);
+}
+
+/* ── Skeleton / shimmer loading ── */
+.rms-rating-bar-skeleton {
+  display: inline-block;
+  height: 26px;
+  width: 200px;
+  border-radius: 6px;
+  margin: 6px 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: rms-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes rms-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Relative positioning for mount target ── */
+.prof-panel-relative {
+  position: relative;
+}
