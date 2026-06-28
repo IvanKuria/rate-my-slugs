@@ -1,5 +1,5 @@
 import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
-import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
+import { createMountPoint, renderComponent, unmountComponent, isPlaceholderName } from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
@@ -18,7 +18,7 @@ export function extractProfName(panel) {
     const text = div.textContent.trim();
     if (text.includes("Instructor:")) {
       const name = text.replace("Instructor:", "").trim();
-      if (name) return name;
+      if (name && !isPlaceholderName(name)) return name;
     }
   }
 
@@ -26,7 +26,7 @@ export function extractProfName(panel) {
   const re = /Instructor[s]?:\s*([\w,.'-]+)/i;
   const text = panel.innerText;
   const res = text.match(re);
-  if (res && res[1]) return res[1];
+  if (res && res[1] && !isPlaceholderName(res[1])) return res[1];
 
   return null;
 }
@@ -64,6 +64,7 @@ export async function renderPage() {
   // Phase 1: Immediately render loading skeletons for all panels
   const mounts = [];
   for (const panel of panels) {
+    if (panel.classList.contains(PAGE_CONFIG.processedClass)) continue;
     if (panel.querySelector('.rms-rating-bar-root')) continue;
 
     const name = extractProfName(panel);
@@ -72,6 +73,9 @@ export async function renderPage() {
     const course = extractCourseCode(panel);
     const target = getMountTarget(panel);
     target.classList.add("prof-panel-relative");
+    // Mark processed regardless of fetch outcome so a not-found professor is
+    // never reprocessed on the next partial postback.
+    panel.classList.add(PAGE_CONFIG.processedClass);
     const mount = createMountPoint(target, 'rms-rating-bar-root');
     renderComponent(mount, RatingBar, { professorData: null, loading: true });
     mounts.push({ mount, name, panel, course });
@@ -112,6 +116,7 @@ export async function renderPage() {
 
     // Only remove if ALL data sources returned nothing
     if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
+      unmountComponent(mount);
       mount.remove();
       return;
     }

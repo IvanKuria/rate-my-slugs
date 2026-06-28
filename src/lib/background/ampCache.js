@@ -4,9 +4,30 @@
  * UCSC Campus Directory.
  */
 
+import { getSettings } from "@/lib/storage/settings";
+
 // --- Constants ---
 const CAMPUS_DIRECTORY_BASE_URL = "https://campusdirectory.ucsc.edu/api/uid/";
-const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 * 7; // 1 week
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DEFAULT_CACHE_DURATION_DAYS = 7;
+
+/**
+ * Resolves the cache freshness window (in ms) from the user's
+ * cacheDurationDays setting, falling back to 7 days if missing/invalid.
+ */
+async function getCacheDurationMs() {
+  let days = DEFAULT_CACHE_DURATION_DAYS;
+  try {
+    const settings = await getSettings();
+    const candidate = Number(settings?.cacheDurationDays);
+    if (Number.isFinite(candidate) && candidate > 0) {
+      days = candidate;
+    }
+  } catch {
+    // Fall back to default on any settings read failure
+  }
+  return days * MS_PER_DAY;
+}
 
 /**
  * Fetches profile data directly from the campus directory API.
@@ -42,8 +63,9 @@ export async function fetchCachedCampusDirectoryProfile(uID) {
     const cache = await chrome.storage.local.get([storageKey]);
     const cachedEntry = cache[storageKey];
     const now = Date.now();
+    const cacheDurationMs = await getCacheDurationMs();
 
-    if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION_MS) {
+    if (cachedEntry && now - cachedEntry.timestamp < cacheDurationMs) {
       return cachedEntry.data;
     }
 

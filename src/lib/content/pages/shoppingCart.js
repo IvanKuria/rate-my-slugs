@@ -1,5 +1,5 @@
 import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
-import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
+import { createMountPoint, renderComponent, unmountComponent, isPlaceholderName } from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
@@ -17,7 +17,7 @@ export function extractProfName(panel) {
   if (!nameBox) return null;
 
   const name = nameBox.outerText?.trim();
-  if (!name) return null;
+  if (!name || isPlaceholderName(name)) return null;
 
   // Reformat "J. Doe" -> "Doe,J."
   const reFI = /^([^\s]+)/i;
@@ -47,6 +47,7 @@ export async function renderPage() {
   // Phase 1: Immediately render loading skeletons for all panels
   const mounts = [];
   for (const panel of panels) {
+    if (panel.classList.contains(PAGE_CONFIG.processedClass)) continue;
     if (panel.querySelector('.rms-rating-bar-root')) continue;
 
     const name = extractProfName(panel);
@@ -54,6 +55,9 @@ export async function renderPage() {
 
     const target = getMountTarget(panel);
     panel.classList.add("prof-cart-panel");
+    // Mark processed regardless of fetch outcome so a not-found professor is
+    // never reprocessed on the next partial postback.
+    panel.classList.add(PAGE_CONFIG.processedClass);
     const mount = createMountPoint(target, 'rms-rating-bar-root');
     renderComponent(mount, RatingBar, { professorData: null, loading: true });
     mounts.push({ mount, name, panel });
@@ -93,6 +97,7 @@ export async function renderPage() {
     }
 
     if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
+      unmountComponent(mount);
       mount.remove();
       return;
     }

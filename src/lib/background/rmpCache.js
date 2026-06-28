@@ -5,11 +5,16 @@
  */
 
 import Fuse from "fuse.js";
+import { getSettings } from "@/lib/storage/settings";
 
 // --- Constants ---
 const RATE_MY_PROFESSORS_ENDPOINT = "https://www.ratemyprofessors.com/graphql";
 const UCSC_SCHOOL_ID = "U2Nob29sLTEwNzg="; // Base64 encoded "School-1078"
-const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 * 7; // 1 week
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DEFAULT_CACHE_DURATION_DAYS = 7;
+
+// Max number of concurrent outbound RMP HTTP requests across all lookups.
+const MAX_CONCURRENT_REQUESTS = 5;
 
 // Fuse.js thresholds (0 = perfect match, 1 = match anything)
 const MATCH_THRESHOLD = 0.25;
@@ -70,6 +75,67 @@ const TEACHER_RATINGS_QUERY = `query TeacherRatingsQuery($id: ID!, $first: Int!)
     }
   }
 }`;
+
+// --- Concurrency Control ---
+
+/**
+ * A minimal, dependency-free promise semaphore used to cap the number of
+ * concurrent outbound RMP HTTP requests. On a 25-row page this prevents
+ * firing dozens of parallel fetches at once.
+ */
+let activeRequests = 0;
+const requestQueue = [];
+
+function acquireSlot() {
+  if (activeRequests < MAX_CONCURRENT_REQUESTS) {
+    activeRequests += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => requestQueue.push(resolve));
+}
+
+function releaseSlot() {
+  const next = requestQueue.shift();
+  if (next) {
+    // Hand the active slot directly to the next waiter.
+    next();
+  } else {
+    activeRequests -= 1;
+  }
+}
+
+/**
+ * Runs an async task while holding a concurrency slot. Guarantees the slot
+ * is released even if the task throws.
+ */
+async function withConcurrencyLimit(task) {
+  await acquireSlot();
+  try {
+    return await task();
+  } finally {
+    releaseSlot();
+  }
+}
+
+// --- Cache Duration ---
+
+/**
+ * Resolves the cache freshness window (in ms) from the user's
+ * cacheDurationDays setting, falling back to 7 days if missing/invalid.
+ */
+async function getCacheDurationMs() {
+  let days = DEFAULT_CACHE_DURATION_DAYS;
+  try {
+    const settings = await getSettings();
+    const candidate = Number(settings?.cacheDurationDays);
+    if (Number.isFinite(candidate) && candidate > 0) {
+      days = candidate;
+    }
+  } catch {
+    // Fall back to default on any settings read failure
+  }
+  return days * MS_PER_DAY;
+}
 
 // --- Name Normalization ---
 
@@ -132,6 +198,36 @@ function generateSearchVariants(name) {
 }
 
 /**
+ * Extracts the known first initial from an input name, parsed the same way
+ * generateSearchVariants derives it:
+ *   - "Last,First" / "Last,F." -> first letter of the part after the comma
+ *   - "First Last"             -> first letter of the first token
+ * Returns a lowercase single letter, or "" if no first initial is known
+ * (e.g. a bare last name with no comma and a single token).
+ */
+function getInputFirstInitial(name) {
+  if (!name) return "";
+  const trimmed = String(name).trim();
+  if (!trimmed) return "";
+
+  const clean = (s) => s.replace(/\./g, "").replace(/\s+/g, " ").trim();
+
+  if (trimmed.includes(",")) {
+    const firstRaw = trimmed.split(",", 2)[1] || "";
+    const first = clean(firstRaw);
+    return first ? first.charAt(0).toLowerCase() : "";
+  }
+
+  const parts = clean(trimmed).split(" ").filter(Boolean);
+  // Only treat as "First Last" when there are at least two tokens; a single
+  // bare token is a last-name-only input with no known first initial.
+  if (parts.length > 1) {
+    return parts[0].charAt(0).toLowerCase();
+  }
+  return "";
+}
+
+/**
  * Normalize a string for comparison: lowercase, letters only.
  */
 function normalize(value) {
@@ -187,7 +283,7 @@ export function selectBestRmpMatch(edges, name, options = {}) {
 
   if (!Array.isArray(edges) || edges.length === 0) return null;
 
-  const candidates = edges
+  const allCandidates = edges
     .map((edge) => edge?.node)
     .filter(Boolean)
     .map((node) => ({
@@ -195,8 +291,26 @@ export function selectBestRmpMatch(edges, name, options = {}) {
       nameTokens: createNameTokens(node),
     }));
 
-  if (candidates.length === 0) return null;
+  if (allCandidates.length === 0) return null;
   if (!name) return null; // Don't return a random candidate without a name to match
+
+  // When the input name yields a known first initial, restrict candidates to
+  // those whose firstName starts with that initial BEFORE fuzzy matching. This
+  // prevents a last-name-only search variant from letting "Smith,J." match
+  // "Smith,Jane" just because she is the only/first Smith. If filtering removes
+  // every candidate (odd RMP data, nicknames), fall back to the full list.
+  const inputInitial = getInputFirstInitial(name);
+  let candidates = allCandidates;
+  if (inputInitial) {
+    const filtered = allCandidates.filter(
+      (c) =>
+        typeof c.firstName === "string" &&
+        c.firstName.trim().charAt(0).toLowerCase() === inputInitial,
+    );
+    if (filtered.length > 0) {
+      candidates = filtered;
+    }
+  }
 
   // Use stricter threshold when RMP fell back to cross-school results
   const threshold = didFallback ? STRICT_THRESHOLD : MATCH_THRESHOLD;
@@ -262,21 +376,23 @@ export function selectBestRmpMatch(edges, name, options = {}) {
  * Returns { edges, didFallback }.
  */
 async function fetchRmpSearchResults(searchText, schoolId) {
-  const response = await fetch(RATE_MY_PROFESSORS_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: "Basic dGVzdDp0ZXN0",
-    },
-    body: JSON.stringify({
-      query: RATE_MY_PROFESSORS_QUERY,
-      variables: {
-        text: searchText,
-        schoolID: schoolId || UCSC_SCHOOL_ID,
+  const response = await withConcurrencyLimit(() =>
+    fetch(RATE_MY_PROFESSORS_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: "Basic dGVzdDp0ZXN0",
       },
+      body: JSON.stringify({
+        query: RATE_MY_PROFESSORS_QUERY,
+        variables: {
+          text: searchText,
+          schoolID: schoolId || UCSC_SCHOOL_ID,
+        },
+      }),
     }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -304,18 +420,25 @@ async function fetchRmpSearchResults(searchText, schoolId) {
  * Searches RMP with cascading fallback strategies.
  * Tries multiple name variants, stopping at the first confident match.
  *
+ * The `ok` field reports whether AT LEAST ONE fetch actually completed
+ * (resolved, even with empty edges) vs every call throwing. A genuine empty
+ * result (ok=true, edges=null) is safe to cache; an all-failures result
+ * (ok=false) is a transient outage and must NOT be negative-cached.
+ *
  * @param {string} name - Professor name (any format)
  * @param {string} [schoolId] - RMP school ID
- * @returns {{ edges: Array|null, didFallback: boolean }}
+ * @returns {{ edges: Array|null, didFallback: boolean, ok: boolean }}
  */
 async function searchWithFallback(name, schoolId) {
-  if (!name) return { edges: null, didFallback: false };
+  if (!name) return { edges: null, didFallback: false, ok: true };
 
   const variants = generateSearchVariants(name);
-  if (variants.length === 0) return { edges: null, didFallback: false };
+  if (variants.length === 0)
+    return { edges: null, didFallback: false, ok: true };
 
   let allEdges = [];
   let anyDidFallback = false;
+  let anyCompleted = false; // at least one fetch resolved (vs all threw)
 
   for (const variant of variants) {
     try {
@@ -323,6 +446,9 @@ async function searchWithFallback(name, schoolId) {
         variant,
         schoolId,
       );
+
+      // The fetch resolved without throwing — a genuine search ran.
+      anyCompleted = true;
 
       if (!edges || edges.length === 0) continue;
 
@@ -336,7 +462,7 @@ async function searchWithFallback(name, schoolId) {
 
       if (match) {
         // Found a good match — return these edges so the caller can use them
-        return { edges, didFallback };
+        return { edges, didFallback, ok: true };
       }
 
       // Accumulate edges for a final attempt
@@ -348,10 +474,12 @@ async function searchWithFallback(name, schoolId) {
 
   // Return all accumulated edges if no single batch produced a confident match
   if (allEdges.length > 0) {
-    return { edges: allEdges, didFallback: anyDidFallback };
+    return { edges: allEdges, didFallback: anyDidFallback, ok: true };
   }
 
-  return { edges: null, didFallback: false };
+  // ok reflects whether any fetch completed. If every variant threw,
+  // ok=false signals a transient failure that must not be cached.
+  return { edges: null, didFallback: false, ok: anyCompleted };
 }
 
 /**
@@ -364,9 +492,18 @@ export async function fetchRateMyProfessorData(name, schoolId) {
   return edges;
 }
 
+// In-flight de-dup: two simultaneous identical lookups share one promise
+// instead of both hitting storage + the network. Keyed by storageKey.
+const inFlightLookups = new Map();
+
 /**
  * Cached wrapper for the RateMyProfessors search API.
  * Uses fallback search strategies for better accuracy.
+ *
+ * Returns { edges, didFallback } (backward compatible with background.js).
+ * The internal `ok` flag from searchWithFallback gates caching: genuine
+ * empty results are cached, but all-transient-failure results are not, so
+ * a professor's rating recovers automatically once the network is back.
  */
 export async function fetchCachedRateMyProfessorData(uID, name, schoolId) {
   if (!uID) {
@@ -375,30 +512,50 @@ export async function fetchCachedRateMyProfessorData(uID, name, schoolId) {
 
   const storageKey = `rmp_${uID}`;
 
-  try {
-    const cache = await chrome.storage.local.get([storageKey]);
-    const cachedEntry = cache[storageKey];
-    const now = Date.now();
+  // Share an existing in-flight lookup for the same key.
+  const existing = inFlightLookups.get(storageKey);
+  if (existing) return existing;
 
-    if (cachedEntry && now - cachedEntry.timestamp < CACHE_DURATION_MS) {
-      return cachedEntry.data;
+  const lookup = (async () => {
+    try {
+      const cache = await chrome.storage.local.get([storageKey]);
+      const cachedEntry = cache[storageKey];
+      const now = Date.now();
+      const cacheDurationMs = await getCacheDurationMs();
+
+      if (cachedEntry && now - cachedEntry.timestamp < cacheDurationMs) {
+        return cachedEntry.data;
+      }
+
+      const { edges, didFallback, ok } = await searchWithFallback(
+        name,
+        schoolId,
+      );
+
+      // Only cache when a real search actually ran. A genuine "not found"
+      // (ok=true, edges=null) is cacheable; an all-failures transient outage
+      // (ok=false) is returned without caching so it retries next time.
+      if (ok) {
+        await chrome.storage.local.set({
+          [storageKey]: {
+            data: { edges, didFallback },
+            timestamp: Date.now(),
+          },
+        });
+      }
+
+      return { edges, didFallback };
+    } catch (error) {
+      console.error(`Failed to fetch RMP data for ${name}`, error);
+      await chrome.storage.local.remove(storageKey).catch(() => {});
+      return null;
+    } finally {
+      inFlightLookups.delete(storageKey);
     }
+  })();
 
-    const { edges, didFallback } = await searchWithFallback(name, schoolId);
-
-    await chrome.storage.local.set({
-      [storageKey]: {
-        data: { edges, didFallback },
-        timestamp: Date.now(),
-      },
-    });
-
-    return { edges, didFallback };
-  } catch (error) {
-    console.error(`Failed to fetch RMP data for ${name}`, error);
-    await chrome.storage.local.remove(storageKey).catch(() => {});
-    return null;
-  }
+  inFlightLookups.set(storageKey, lookup);
+  return lookup;
 }
 
 /**
@@ -409,21 +566,23 @@ export async function fetchProfessorReviews(legacyId, limit = 10) {
     ? btoa(`Teacher-${legacyId}`)
     : Buffer.from(`Teacher-${legacyId}`).toString("base64");
 
-  const response = await fetch(RATE_MY_PROFESSORS_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: "Basic dGVzdDp0ZXN0",
-    },
-    body: JSON.stringify({
-      query: TEACHER_RATINGS_QUERY,
-      variables: {
-        id: teacherNodeId,
-        first: limit,
+  const response = await withConcurrencyLimit(() =>
+    fetch(RATE_MY_PROFESSORS_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: "Basic dGVzdDp0ZXN0",
       },
+      body: JSON.stringify({
+        query: TEACHER_RATINGS_QUERY,
+        variables: {
+          id: teacherNodeId,
+          first: limit,
+        },
+      }),
     }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

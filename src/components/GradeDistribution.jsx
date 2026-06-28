@@ -11,6 +11,50 @@ const GRADE_COLORS = {
   'F': '#ef4444'
 };
 
+// ── Cache config ─────────────────────────────────────────────────────────────
+// Successful responses are cached in chrome.storage.local under keys prefixed
+// with `cache_` so the existing background `clearCache` route (which removes any
+// key starting with `cache_`) wipes them when the user clears data.
+const CACHE_PREFIX = 'cache_grades_';
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const FETCH_TIMEOUT_MS = 12000; // Render free tier cold-starts; give it room
+
+const cacheKeyFor = (instructor, course) =>
+  `${CACHE_PREFIX}${instructor || ''}_${course || ''}`;
+
+const readCache = (key) =>
+  new Promise((resolve) => {
+    try {
+      if (typeof chrome === 'undefined' || !chrome.storage?.local) {
+        resolve(null);
+        return;
+      }
+      chrome.storage.local.get(key, (items) => {
+        if (chrome.runtime?.lastError) {
+          resolve(null);
+          return;
+        }
+        const entry = items?.[key];
+        if (entry && entry.timestamp && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+          resolve(entry.data);
+        } else {
+          resolve(null);
+        }
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+
+const writeCache = (key, data) => {
+  try {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+    chrome.storage.local.set({ [key]: { timestamp: Date.now(), data } });
+  } catch {
+    /* ignore cache write failures */
+  }
+};
+
 const GradeDistribution = ({ instructorName, course }) => {
   const [status, setStatus] = useState('loading');
   const [data, setData] = useState(null);
@@ -18,27 +62,86 @@ const GradeDistribution = ({ instructorName, course }) => {
   const [selectedYear, setSelectedYear] = useState('ALL');
 
   useEffect(() => {
-    const fetchGrades = async () => {
+    // Reset on every instructor/course change so a previous professor's chart
+    // does not linger while the new one loads.
+    let cancelled = false;
+    setStatus('loading');
+    setData(null);
+    setSelectedQuarter('ALL');
+    setSelectedYear('ALL');
+
+    if (!instructorName) {
+      setStatus('no_data');
+      return;
+    }
+
+    const cacheKey = cacheKeyFor(instructorName, course);
+
+    // Single attempt with an AbortController-based timeout.
+    const attemptFetch = async () => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       try {
         const params = new URLSearchParams({ instructor: instructorName });
         if (course) params.append('course', course);
 
-        const response = await fetch(`${API_BASE_URL}/api/grades?${params}`);
-        const result = await response.json();
+        const response = await fetch(`${API_BASE_URL}/api/grades?${params}`, {
+          signal: controller.signal,
+        });
+        return await response.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    };
 
-        if (result.success) {
-          setData(result);
+    const fetchGrades = async () => {
+      // Serve fresh cache immediately (covers cold-start / outage).
+      const cached = await readCache(cacheKey);
+      if (cancelled) return;
+      if (cached) {
+        if (cached.success) {
+          setData(cached);
           setStatus('success');
-        } else {
-          setStatus(result.error === 'instructor_not_found' ? 'not_found' : 'no_data');
         }
-      } catch (error) {
-        console.error('Error fetching grade data:', error);
+        // If cache holds a non-success payload we still try the network below.
+      }
+
+      // Try network, with ONE retry on failure/timeout.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const result = await attemptFetch();
+          if (cancelled) return; // discard out-of-order / stale response
+
+          if (result.success) {
+            writeCache(cacheKey, result);
+            setData(result);
+            setStatus('success');
+          } else {
+            setStatus(result.error === 'instructor_not_found' ? 'not_found' : 'no_data');
+          }
+          return;
+        } catch (error) {
+          if (cancelled) return;
+          console.error(
+            `Error fetching grade data (attempt ${attempt + 1}):`,
+            error
+          );
+          // Loop will retry once; on final failure fall through.
+        }
+      }
+
+      if (cancelled) return;
+      // If we already painted something usable from cache, keep it.
+      if (!(cached && cached.success)) {
         setStatus('error');
       }
     };
 
     fetchGrades();
+
+    return () => {
+      cancelled = true;
+    };
   }, [instructorName, course]);
 
   if (status === 'loading') {
@@ -49,7 +152,18 @@ const GradeDistribution = ({ instructorName, course }) => {
     );
   }
 
-  if (status === 'not_found' || status === 'no_data' || status === 'error') {
+  if (status === 'error') {
+    return (
+      <div className="grade-dist-section">
+        <h4 className="grade-dist-title">Grade Distribution</h4>
+        <div className="grade-dist-error" role="alert">
+          Grade data is temporarily unavailable, try again.
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'not_found' || status === 'no_data') {
     return (
       <div className="grade-dist-section">
         <h4 className="grade-dist-title">Grade Distribution</h4>
@@ -60,7 +174,9 @@ const GradeDistribution = ({ instructorName, course }) => {
     );
   }
 
-  const { distributions, aggregated } = data;
+  const { distributions: rawDistributions, aggregated } = data;
+  // Guard against the server omitting the distributions array.
+  const distributions = Array.isArray(rawDistributions) ? rawDistributions : [];
 
   // Get unique quarters and years for filters
   const quarters = [...new Set(distributions.map(d => d.quarter))];
@@ -74,9 +190,18 @@ const GradeDistribution = ({ instructorName, course }) => {
   });
 
   // Aggregate filtered data or use overall if showing all
-  const displayData = (selectedQuarter === 'ALL' && selectedYear === 'ALL')
+  const rawDisplayData = (selectedQuarter === 'ALL' && selectedYear === 'ALL')
     ? aggregated
     : aggregateFiltered(filteredDistributions);
+
+  // Defensive defaults: the server may omit fields. Never iterate undefined.
+  const displayData = {
+    totalStudents: 0,
+    gpa: null,
+    ...(rawDisplayData || {}),
+    letterGrades: (rawDisplayData && rawDisplayData.letterGrades) || {},
+    otherGrades: (rawDisplayData && rawDisplayData.otherGrades) || {},
+  };
 
   // Convert to chart format
   const chartData = Object.entries(displayData.letterGrades).map(([grade, count]) => ({
@@ -86,6 +211,13 @@ const GradeDistribution = ({ instructorName, course }) => {
   }));
 
   const totalLetterGrades = Object.values(displayData.letterGrades).reduce((a, b) => a + b, 0);
+
+  // Screen-reader summary of the (otherwise opaque) SVG bar chart.
+  const chartAriaSummary = chartData.length > 0
+    ? `Grade distribution: ${chartData
+        .map(({ grade, count }) => `${grade}, ${count} student${count === 1 ? '' : 's'}`)
+        .join('; ')}. Total ${totalLetterGrades} letter grades.`
+    : 'No grade distribution data to display.';
 
   return (
     <div className="grade-dist-section">
@@ -125,7 +257,7 @@ const GradeDistribution = ({ instructorName, course }) => {
         </div>
       ) : (
         <>
-          <div className="grade-dist-chart">
+          <div className="grade-dist-chart" role="img" aria-label={chartAriaSummary}>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="grade" tick={{ fontSize: 11 }} />
@@ -180,10 +312,10 @@ function aggregateFiltered(distributions) {
 
   if (distributions.length === 1) {
     return {
-      letterGrades: distributions[0].letterGrades,
-      otherGrades: distributions[0].otherGrades,
-      totalStudents: distributions[0].totalStudents,
-      gpa: distributions[0].gpa
+      letterGrades: distributions[0].letterGrades || {},
+      otherGrades: distributions[0].otherGrades || {},
+      totalStudents: distributions[0].totalStudents || 0,
+      gpa: distributions[0].gpa ?? null
     };
   }
 
@@ -197,12 +329,14 @@ function aggregateFiltered(distributions) {
   }
 
   for (const dist of distributions) {
+    const distLetter = dist.letterGrades || {};
+    const distOther = dist.otherGrades || {};
     for (const key of gradeKeys) {
-      letterGrades[key] += dist.letterGrades[key] || 0;
+      letterGrades[key] += distLetter[key] || 0;
     }
     for (const key of otherKeys) {
-      if (dist.otherGrades[key]) {
-        otherGrades[key] = (otherGrades[key] || 0) + dist.otherGrades[key];
+      if (distOther[key]) {
+        otherGrades[key] = (otherGrades[key] || 0) + distOther[key];
       }
     }
   }

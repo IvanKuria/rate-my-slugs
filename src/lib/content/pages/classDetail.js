@@ -1,10 +1,17 @@
 import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
-import { createMountPoint, renderComponent } from '@/lib/content/shared/mountHelper';
+import { createMountPoint, renderComponent, unmountComponent, isPlaceholderName } from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {
-  panelSelector: '.PSGROUPBOXWBO, [id*="SSR_CLSRCH_F_WK"]',
+  // `.PSGROUPBOXWBO` alone is too generic and makes the observer fire on nearly
+  // every MyUCSC partial postback. Narrow it to group boxes that actually hold
+  // an instructor/meeting field this module scrapes (MTG_INSTR / INSTR_LONG),
+  // which is also all we can render against. The SSR_CLSRCH_F_WK class-search
+  // container still matches on its own.
+  // ASSUMPTION (needs live verification): class-detail group boxes contain an
+  // MTG_INSTR or INSTR_LONG descendant. Uses :has(), supported in modern Chrome.
+  panelSelector: '[id*="SSR_CLSRCH_F_WK"], .PSGROUPBOXWBO:has([id*="MTG_INSTR"]), .PSGROUPBOXWBO:has([id*="INSTR_LONG"])',
   processedClass: "rms-processed",
 };
 
@@ -17,7 +24,7 @@ export function extractProfName(panel) {
   const instrEl = panel.querySelector('[id*="MTG_INSTR"]');
   if (instrEl) {
     const name = instrEl.textContent?.trim();
-    if (name && name !== 'Staff' && name !== 'TBA') return name;
+    if (name && !isPlaceholderName(name)) return name;
   }
 
   // Try looking for "Instructor(s):" label pattern
@@ -25,14 +32,14 @@ export function extractProfName(panel) {
   const instructorMatch = allText.match(/Instructor[s]?:\s*([^\n\r]+)/i);
   if (instructorMatch && instructorMatch[1]) {
     const name = instructorMatch[1].trim();
-    if (name && name !== 'Staff' && name !== 'TBA') return name;
+    if (name && !isPlaceholderName(name)) return name;
   }
 
   // Try INSTR_LONG elements
   const instrLong = panel.querySelector('[id*="INSTR_LONG"]');
   if (instrLong) {
     const name = instrLong.textContent?.trim();
-    if (name && name !== 'Staff' && name !== 'TBA') return name;
+    if (name && !isPlaceholderName(name)) return name;
   }
 
   return null;
@@ -80,6 +87,7 @@ export async function renderPage() {
   // Phase 1: Immediately render loading skeletons
   const mounts = [];
   for (const panel of panels) {
+    if (panel.classList.contains(PAGE_CONFIG.processedClass)) continue;
     if (panel.querySelector('.rms-rating-bar-root')) continue;
 
     const name = extractProfName(panel);
@@ -87,6 +95,9 @@ export async function renderPage() {
 
     const course = extractCourseCode(panel);
     const target = getMountTarget(panel);
+    // Mark the panel processed regardless of fetch outcome, so a not-found
+    // professor (whose rating bar is removed below) is never reprocessed.
+    panel.classList.add(PAGE_CONFIG.processedClass);
     const mount = createMountPoint(target, 'rms-rating-bar-root');
     renderComponent(mount, RatingBar, { professorData: null, loading: true });
     mounts.push({ mount, name, panel, course });
@@ -126,6 +137,7 @@ export async function renderPage() {
     }
 
     if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
+      unmountComponent(mount);
       mount.remove();
       return;
     }

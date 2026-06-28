@@ -43,11 +43,30 @@ export async function getUIDFromJson(name) {
 
   if (!value) {
     try {
-      const nameParts = name.split(",");
-      if (nameParts.length >= 2) {
-        const targetLast = nameParts[0].trim().toLowerCase();
-        const targetFirstInitial = nameParts[1].trim().charAt(0).toLowerCase();
+      // Derive the target last name + first initial from the input name.
+      // Two supported formats:
+      //   "Last,F." / "Last,First"  -> split on comma
+      //   "First Last" (no comma)   -> last whitespace token is the last name,
+      //                                 first token's first letter is the initial
+      let targetLast = "";
+      let targetFirstInitial = "";
 
+      if (name.includes(",")) {
+        const nameParts = name.split(",");
+        if (nameParts.length >= 2) {
+          targetLast = nameParts[0].trim().toLowerCase();
+          targetFirstInitial = nameParts[1].trim().charAt(0).toLowerCase();
+        }
+      } else {
+        const tokens = name.trim().split(/\s+/).filter(Boolean);
+        if (tokens.length >= 2) {
+          targetLast = tokens[tokens.length - 1].toLowerCase();
+          targetFirstInitial = tokens[0].charAt(0).toLowerCase();
+        }
+      }
+
+      if (targetLast && targetFirstInitial) {
+        // The JSON keys are always in "Last,F." format.
         const matchKey = Object.keys(data).find((key) => {
           const keyParts = key.split(",");
           if (keyParts.length < 2) return false;

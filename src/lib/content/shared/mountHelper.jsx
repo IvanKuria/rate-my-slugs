@@ -12,16 +12,62 @@ export function createMountPoint(parent, className = "rms-professor-root") {
 }
 
 /**
+ * Placeholder / non-resolvable instructor names that should never be resolved
+ * or fetched. Matched case-insensitively against the trimmed name.
+ */
+const PLACEHOLDER_NAMES = new Set([
+  "staff",
+  "tba",
+  "to be announced",
+  "to be determined",
+  "instructor tbd",
+]);
+
+/**
+ * Returns true when a name is empty/whitespace or a known placeholder
+ * (e.g. "Staff", "TBA", "To Be Determined"). Such names must not be fetched.
+ */
+export function isPlaceholderName(name) {
+  if (!name) return true;
+  const normalized = String(name).trim().toLowerCase();
+  if (!normalized) return true;
+  return PLACEHOLDER_NAMES.has(normalized);
+}
+
+/**
  * Renders a React component into a mount point.
+ *
+ * Reuses a single React root per mount element (stashed on `mount.__rmsRoot`).
+ * Page modules call this twice on the same mount — once for the loading
+ * skeleton and once with real data — so creating a fresh root each time would
+ * trigger React 18's "container already passed to createRoot" warning and leak
+ * the first root. Reusing the stashed root avoids both.
  */
 export function renderComponent(mount, Component, props) {
-  const root = createRoot(mount);
+  let root = mount.__rmsRoot;
+  if (!root) {
+    root = createRoot(mount);
+    mount.__rmsRoot = root;
+  }
   root.render(
     <React.StrictMode>
       <Component {...props} />
     </React.StrictMode>
   );
   return root;
+}
+
+/**
+ * Unmounts the React root associated with a mount element (if any) and clears
+ * the stash, so the element can be removed without leaking its root. Call this
+ * instead of bare `mount.remove()` whenever a mount is torn down.
+ */
+export function unmountComponent(mount) {
+  const root = mount && mount.__rmsRoot;
+  if (root) {
+    root.unmount();
+    delete mount.__rmsRoot;
+  }
 }
 
 /**

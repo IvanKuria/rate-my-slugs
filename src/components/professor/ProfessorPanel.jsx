@@ -89,7 +89,9 @@ export default function ProfessorPanel({
   const rmpNode = rateMyProfessor;
   const overallRating = rmpNode?.avgRatingRounded ?? null;
   const difficulty = rmpNode?.avgDifficultyRounded ?? null;
-  const takeAgainPercent = rmpNode?.wouldTakeAgainPercentRounded ?? null;
+  // RMP returns -1 for unknown would-take-again; treat any negative as no data.
+  const rawTakeAgain = rmpNode?.wouldTakeAgainPercentRounded ?? rmpNode?.wouldTakeAgainPercent ?? null;
+  const takeAgainPercent = (typeof rawTakeAgain === 'number' && rawTakeAgain >= 0) ? rawTakeAgain : null;
   const numRatings = rmpNode?.numRatings ?? 0;
   const ratingTags = Array.isArray(rmpNode?.teacherRatingTags)
     ? rmpNode.teacherRatingTags.filter((t) => t?.tagName)
