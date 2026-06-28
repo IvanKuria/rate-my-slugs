@@ -42,11 +42,11 @@ async function loadProfUids(): Promise<ProfUidsMap> {
 /**
  * Resolves a professor's UID from the JSON dataset.
  * Strategy: exact match, then fuzzy match on "Last,F." pattern.
- * Returns "jdoe" (sentinel) if not found.
+ * Returns null if not found.
  */
-export async function getUIDFromJson(name: string): Promise<string> {
+export async function getUIDFromJson(name: string): Promise<string | null> {
   const data = await loadProfUids();
-  let uID = 'jdoe';
+  let uID: string | null = null;
   let value = data[name];
 
   if (!value) {
@@ -111,7 +111,7 @@ export async function getUIDFromJson(name: string): Promise<string> {
  * Sends a message to the background script to fetch all professor data.
  */
 export async function fetchProfessorData(
-  uID: string,
+  uID: string | null,
   name: string
 ): Promise<FetchProfessorDataResponse> {
   return chrome.runtime.sendMessage({

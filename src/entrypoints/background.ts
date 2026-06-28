@@ -35,8 +35,8 @@ async function fetchProfessorBundle(
   ID: string | null,
   rateMyProfSchoolId?: string
 ): Promise<ProfessorBundle> {
-  const hasUID = ID && ID !== 'jdoe';
-  const rmpCacheKey = hasUID ? ID : `name_${name}`;
+  const hasUID = ID != null;
+  const rmpCacheKey = ID ?? `name_${name}`;
 
   const [campusResponse, rmpResult] = await Promise.all([
     hasUID
