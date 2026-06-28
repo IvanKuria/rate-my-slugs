@@ -1,0 +1,9 @@
+.output
+.wxt
+node_modules
+dist
+package-lock.json
+public/data
+
+# Docs are authored by hand and live on main; keep them out of the code format pass
+*.md
