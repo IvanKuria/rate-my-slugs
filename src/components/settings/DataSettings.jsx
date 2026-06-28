@@ -31,7 +31,9 @@ export default function DataSettings({ settings, onUpdate }) {
         </div>
         <select
           value={settings.cacheDurationDays}
-          onChange={(e) => onUpdate({ cacheDurationDays: Number(e.target.value) })}
+          onChange={(e) =>
+            onUpdate({ cacheDurationDays: Number(e.target.value) })
+          }
           className="rounded-md border bg-background px-3 py-1.5 text-sm"
         >
           <option value={1}>1 day</option>

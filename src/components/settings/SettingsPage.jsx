@@ -18,9 +18,10 @@ export default function SettingsPage() {
     );
   }
 
-  const slugUrl = typeof chrome !== 'undefined' && chrome.runtime?.getURL
-    ? chrome.runtime.getURL('icons/sammy/sammy-128.jpg')
-    : null;
+  const slugUrl =
+    typeof chrome !== 'undefined' && chrome.runtime?.getURL
+      ? chrome.runtime.getURL('icons/sammy/sammy-128.jpg')
+      : null;
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-6">
@@ -34,8 +35,12 @@ export default function SettingsPage() {
           />
         )}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Rate My Slugs</h1>
-          <p className="text-sm text-muted-foreground">Customize your experience</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Rate My Slugs
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Customize your experience
+          </p>
         </div>
       </div>
 

@@ -1,5 +1,15 @@
-const slugStyle = { width: 20, height: 20, objectFit: 'contain', display: 'block' };
-const wrapperStyle = { position: 'relative', display: 'inline-block', width: 20, height: 20 };
+const slugStyle = {
+  width: 20,
+  height: 20,
+  objectFit: 'contain',
+  display: 'block',
+};
+const wrapperStyle = {
+  position: 'relative',
+  display: 'inline-block',
+  width: 20,
+  height: 20,
+};
 const fillStyle = { position: 'absolute', top: 0, left: 0 };
 
 const SlugRating = ({ rating }) => {
@@ -15,7 +25,11 @@ const SlugRating = ({ rating }) => {
         // Full slug
         slugs.push(
           <span key={i} style={wrapperStyle}>
-            <img src={slugUrl} style={{ ...slugStyle, opacity: 0.3 }} alt="slug empty" />
+            <img
+              src={slugUrl}
+              style={{ ...slugStyle, opacity: 0.3 }}
+              alt="slug empty"
+            />
             <img
               src={slugUrl}
               style={{ ...slugStyle, ...fillStyle, clipPath: 'inset(0 0 0 0)' }}
@@ -28,10 +42,18 @@ const SlugRating = ({ rating }) => {
         const percent = Math.round(fraction * 100);
         slugs.push(
           <span key={i} style={wrapperStyle}>
-            <img src={slugUrl} style={{ ...slugStyle, opacity: 0.3 }} alt="slug empty" />
             <img
               src={slugUrl}
-              style={{ ...slugStyle, ...fillStyle, clipPath: `inset(0 ${100 - percent}% 0 0)` }}
+              style={{ ...slugStyle, opacity: 0.3 }}
+              alt="slug empty"
+            />
+            <img
+              src={slugUrl}
+              style={{
+                ...slugStyle,
+                ...fillStyle,
+                clipPath: `inset(0 ${100 - percent}% 0 0)`,
+              }}
               alt="slug partial"
             />
           </span>
@@ -40,7 +62,11 @@ const SlugRating = ({ rating }) => {
         // Empty slug
         slugs.push(
           <span key={i} style={wrapperStyle}>
-            <img src={slugUrl} style={{ ...slugStyle, opacity: 0.3 }} alt="slug empty" />
+            <img
+              src={slugUrl}
+              style={{ ...slugStyle, opacity: 0.3 }}
+              alt="slug empty"
+            />
           </span>
         );
       }

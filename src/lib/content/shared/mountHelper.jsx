@@ -4,8 +4,8 @@ import { createRoot } from 'react-dom/client';
 /**
  * Creates a mount point element inside a parent and adds positioning class.
  */
-export function createMountPoint(parent, className = "rms-professor-root") {
-  const mount = document.createElement("span");
+export function createMountPoint(parent, className = 'rms-professor-root') {
+  const mount = document.createElement('span');
   mount.className = className;
   parent.appendChild(mount);
   return mount;
@@ -16,11 +16,11 @@ export function createMountPoint(parent, className = "rms-professor-root") {
  * or fetched. Matched case-insensitively against the trimmed name.
  */
 const PLACEHOLDER_NAMES = new Set([
-  "staff",
-  "tba",
-  "to be announced",
-  "to be determined",
-  "instructor tbd",
+  'staff',
+  'tba',
+  'to be announced',
+  'to be determined',
+  'instructor tbd',
 ]);
 
 /**
@@ -80,7 +80,7 @@ export function setupObserver(selector, callback, debounceMs = 150) {
   const observer = new MutationObserver((mutations) => {
     let shouldRun = false;
     for (const mutation of mutations) {
-      if (mutation.type === "childList") {
+      if (mutation.type === 'childList') {
         for (const node of mutation.addedNodes) {
           if (
             node.nodeType === Node.ELEMENT_NODE &&

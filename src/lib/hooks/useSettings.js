@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getSettings, updateSettings, onSettingsChange, DEFAULT_SETTINGS } from '@/lib/storage/settings';
+import {
+  getSettings,
+  updateSettings,
+  onSettingsChange,
+  DEFAULT_SETTINGS,
+} from '@/lib/storage/settings';
 
 /**
  * React hook for reading/writing extension settings with live updates.

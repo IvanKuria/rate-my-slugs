@@ -1,21 +1,21 @@
-import React, { Suspense, lazy } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { useSettings } from "@/lib/hooks/useSettings";
-import { stagger, professorSwitch } from "@/lib/animations";
-import { getFirst } from "@/utils/utils";
-import ProfessorHeader from "@/components/professor/ProfessorHeader";
-import ContactInfo from "@/components/professor/ContactInfo";
-import ExpandedDetails from "@/components/professor/ExpandedDetails";
-import RatingSummary from "@/components/professor/RatingSummary";
-import RatingTags from "@/components/professor/RatingTags";
-import ReviewCarousel from "@/components/professor/ReviewCarousel";
-import { Settings } from "lucide-react";
+import React, { Suspense, lazy } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { useSettings } from '@/lib/hooks/useSettings';
+import { stagger, professorSwitch } from '@/lib/animations';
+import { getFirst } from '@/utils/utils';
+import ProfessorHeader from '@/components/professor/ProfessorHeader';
+import ContactInfo from '@/components/professor/ContactInfo';
+import ExpandedDetails from '@/components/professor/ExpandedDetails';
+import RatingSummary from '@/components/professor/RatingSummary';
+import RatingTags from '@/components/professor/RatingTags';
+import ReviewCarousel from '@/components/professor/ReviewCarousel';
+import { Settings } from 'lucide-react';
 
-const GradeDistribution = lazy(() => import("@/components/GradeDistribution"));
+const GradeDistribution = lazy(() => import('@/components/GradeDistribution'));
 
 /**
  * Main professor panel component for the side panel.
@@ -38,8 +38,7 @@ export default function ProfessorPanel({
 
   // Derive display data from raw API/LDAP fields
 
-  const name =
-    getFirst(apiData?.cn) || instructorName || "Unknown Professor";
+  const name = getFirst(apiData?.cn) || instructorName || 'Unknown Professor';
   const department = getFirst(apiData?.ucscpersonpubdepartmentnumber);
   const division = getFirst(apiData?.ucscpersonpubdivision);
   const email = getFirst(apiData?.mail);
@@ -51,10 +50,10 @@ export default function ProfessorPanel({
   // Photo URL
   const photoURL = apiData?.jpegphoto;
   const photoSrc =
-    photoURL && photoURL.includes("uid")
+    photoURL && photoURL.includes('uid')
       ? photoURL
-      : typeof chrome !== "undefined" && chrome.runtime?.getURL
-        ? chrome.runtime.getURL("images/default_pfp.png")
+      : typeof chrome !== 'undefined' && chrome.runtime?.getURL
+        ? chrome.runtime.getURL('images/default_pfp.png')
         : null;
 
   // Website
@@ -62,17 +61,17 @@ export default function ProfessorPanel({
   const websiteField = apiData?.ucscpersonpubwebsite;
   if (Array.isArray(websiteField) && websiteField.length > 0) {
     const raw = websiteField[0];
-    if (typeof raw === "string" && raw.trim())
-      website = raw.split(" ")[0].trim();
-  } else if (typeof websiteField === "string" && websiteField.trim()) {
-    website = websiteField.split(" ")[0].trim();
+    if (typeof raw === 'string' && raw.trim())
+      website = raw.split(' ')[0].trim();
+  } else if (typeof websiteField === 'string' && websiteField.trim()) {
+    website = websiteField.split(' ')[0].trim();
   }
 
   // Publications
   let publicationLinks = [];
   const pubField = apiData?.ucscpersonpubselectedpublication;
   const extractLinks = (html) => {
-    if (typeof html !== "string") return [];
+    if (typeof html !== 'string') return [];
     const links = [];
     const hrefPattern = /href="([^"]+)"/g;
     let m;
@@ -81,7 +80,7 @@ export default function ProfessorPanel({
   };
   if (Array.isArray(pubField) && pubField.length > 0) {
     publicationLinks = extractLinks(pubField[0]);
-  } else if (typeof pubField === "string") {
+  } else if (typeof pubField === 'string') {
     publicationLinks = extractLinks(pubField);
   }
 
@@ -90,8 +89,12 @@ export default function ProfessorPanel({
   const overallRating = rmpNode?.avgRatingRounded ?? null;
   const difficulty = rmpNode?.avgDifficultyRounded ?? null;
   // RMP returns -1 for unknown would-take-again; treat any negative as no data.
-  const rawTakeAgain = rmpNode?.wouldTakeAgainPercentRounded ?? rmpNode?.wouldTakeAgainPercent ?? null;
-  const takeAgainPercent = (typeof rawTakeAgain === 'number' && rawTakeAgain >= 0) ? rawTakeAgain : null;
+  const rawTakeAgain =
+    rmpNode?.wouldTakeAgainPercentRounded ??
+    rmpNode?.wouldTakeAgainPercent ??
+    null;
+  const takeAgainPercent =
+    typeof rawTakeAgain === 'number' && rawTakeAgain >= 0 ? rawTakeAgain : null;
   const numRatings = rmpNode?.numRatings ?? 0;
   const ratingTags = Array.isArray(rmpNode?.teacherRatingTags)
     ? rmpNode.teacherRatingTags.filter((t) => t?.tagName)
@@ -103,18 +106,23 @@ export default function ProfessorPanel({
     : null;
 
   // Unique professor key for transitions
-  const professorKey =
-    rmpNode?.id || `${name}-${department || "unknown"}`;
+  const professorKey = rmpNode?.id || `${name}-${department || 'unknown'}`;
 
   // Section visibility from settings
   const sections = settingsLoading
-    ? { campusInfo: true, rmpRatings: true, gradeDistribution: true, reviews: true, tags: true }
+    ? {
+        campusInfo: true,
+        rmpRatings: true,
+        gradeDistribution: true,
+        reviews: true,
+        tags: true,
+      }
     : settings.sections;
 
   // Slug logo URL
   const slugLogoUrl =
-    typeof chrome !== "undefined" && chrome.runtime?.getURL
-      ? chrome.runtime.getURL("icons/sammy/slug.png")
+    typeof chrome !== 'undefined' && chrome.runtime?.getURL
+      ? chrome.runtime.getURL('icons/sammy/slug.png')
       : null;
 
   return (
@@ -122,8 +130,8 @@ export default function ProfessorPanel({
       {/* Frosted glass header */}
       <header
         className={cn(
-          "sticky top-0 z-10 flex items-center gap-3 px-4 py-3",
-          "border-b bg-background/80 backdrop-blur-xl"
+          'sticky top-0 z-10 flex items-center gap-3 px-4 py-3',
+          'border-b bg-background/80 backdrop-blur-xl'
         )}
       >
         {slugLogoUrl && (
@@ -255,9 +263,9 @@ export default function ProfessorPanel({
                 <a
                   href="mailto:ikuria@ucsc.edu?subject=Rate My Slugs Feedback"
                   className={cn(
-                    "text-xs text-muted-foreground",
-                    "hover:text-foreground transition-colors",
-                    "underline underline-offset-2"
+                    'text-xs text-muted-foreground',
+                    'hover:text-foreground transition-colors',
+                    'underline underline-offset-2'
                   )}
                 >
                   Have feedback? Let me know

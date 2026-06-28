@@ -4,9 +4,9 @@
  */
 
 export const DEFAULT_SETTINGS = {
-  theme: 'light',               // "light" | "dark" | "system"
-  accentColor: 'ucsc-blue',    // "ucsc-blue" | "ucsc-gold" | "custom"
-  viewMode: 'expanded',        // "expanded" | "compact"
+  theme: 'light', // "light" | "dark" | "system"
+  accentColor: 'ucsc-blue', // "ucsc-blue" | "ucsc-gold" | "custom"
+  viewMode: 'expanded', // "expanded" | "compact"
   sections: {
     campusInfo: true,
     rmpRatings: true,
@@ -60,7 +60,10 @@ export async function updateSettings(partial) {
 export function onSettingsChange(callback) {
   const listener = (changes, area) => {
     if (area === 'sync' && changes.rmsSettings) {
-      const newSettings = { ...DEFAULT_SETTINGS, ...changes.rmsSettings.newValue };
+      const newSettings = {
+        ...DEFAULT_SETTINGS,
+        ...changes.rmsSettings.newValue,
+      };
       callback(newSettings);
     }
   };

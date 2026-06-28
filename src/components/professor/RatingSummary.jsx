@@ -1,21 +1,21 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { stagger } from "@/lib/animations";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { stagger } from '@/lib/animations';
 import {
   getQualityPalette,
   getDifficultyPalette,
   buildCardStyle,
   formatDate,
-} from "@/utils/colors";
+} from '@/utils/colors';
 import {
   formatNumber,
   roundToOneDecimal,
   roundToWhole,
   StarRating,
-} from "@/utils/utils";
-import SlugRating from "@/components/SlugRating";
+} from '@/utils/utils';
+import SlugRating from '@/components/SlugRating';
 
 /**
  * 2x2 grid of summary rating cards:
@@ -43,9 +43,9 @@ export default function RatingSummary({
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              "inline-flex items-center justify-center rounded-lg px-4 py-2",
-              "bg-primary text-primary-foreground text-sm font-medium",
-              "hover:bg-primary/90 transition-colors"
+              'inline-flex items-center justify-center rounded-lg px-4 py-2',
+              'bg-primary text-primary-foreground text-sm font-medium',
+              'hover:bg-primary/90 transition-colors'
             )}
           >
             Leave a rating
@@ -59,9 +59,12 @@ export default function RatingSummary({
     <div className="flex flex-col gap-3">
       {/* Star rating row */}
       <div className="flex items-center gap-2 px-1">
-        <StarRating rating={roundToWhole(overallRating)} numRatings={numRatings} />
+        <StarRating
+          rating={roundToWhole(overallRating)}
+          numRatings={numRatings}
+        />
         <span className="text-xs text-muted-foreground">
-          ({numRatings} rating{numRatings !== 1 ? "s" : ""})
+          ({numRatings} rating{numRatings !== 1 ? 's' : ''})
         </span>
       </div>
 
@@ -85,7 +88,9 @@ export default function RatingSummary({
               <div className="flex items-center gap-1.5">
                 <SlugRating rating={overallRating || 0} />
                 <span className="text-lg font-bold leading-none">
-                  {overallRating != null ? `${formatNumber(overallRating)}/5` : "N/A"}
+                  {overallRating != null
+                    ? `${formatNumber(overallRating)}/5`
+                    : 'N/A'}
                 </span>
               </div>
             </CardContent>
@@ -103,7 +108,7 @@ export default function RatingSummary({
                 Difficulty
               </span>
               <span className="text-lg font-bold leading-none">
-                {difficulty != null ? `${formatNumber(difficulty)}/5` : "N/A"}
+                {difficulty != null ? `${formatNumber(difficulty)}/5` : 'N/A'}
               </span>
             </CardContent>
           </Card>
@@ -119,7 +124,7 @@ export default function RatingSummary({
               <span className="text-lg font-bold leading-none text-foreground">
                 {takeAgainPercent != null
                   ? `${roundToOneDecimal(takeAgainPercent)}%`
-                  : "N/A"}
+                  : 'N/A'}
               </span>
             </CardContent>
           </Card>
@@ -147,8 +152,8 @@ export default function RatingSummary({
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "text-xs text-center text-primary hover:underline",
-            "underline-offset-2 transition-colors mt-1"
+            'text-xs text-center text-primary hover:underline',
+            'underline-offset-2 transition-colors mt-1'
           )}
         >
           View full profile on RateMyProfessors

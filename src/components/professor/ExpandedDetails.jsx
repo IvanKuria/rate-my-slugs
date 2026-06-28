@@ -1,24 +1,32 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ExternalLink, BookOpen, Clock, FlaskConical, Globe, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import { springs } from "@/lib/animations";
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ChevronDown,
+  ExternalLink,
+  BookOpen,
+  Clock,
+  FlaskConical,
+  Globe,
+  FileText,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { springs } from '@/lib/animations';
 
 /**
  * Strips HTML tags from a string, returning plain text.
  * Converts <li> items to comma-separated values.
  */
 function stripHtml(html) {
-  if (!html || typeof html !== "string") return html;
+  if (!html || typeof html !== 'string') return html;
   if (!/<[a-z][\s\S]*>/i.test(html)) return html;
   return html
-    .replace(/<li[^>]*>/gi, "")
-    .replace(/<\/li>/gi, ", ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/,\s*$/, "")
-    .replace(/\s+/g, " ")
+    .replace(/<li[^>]*>/gi, '')
+    .replace(/<\/li>/gi, ', ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/,\s*$/, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -48,7 +56,7 @@ export default function ExpandedDetails({
   if (!hasContent) return null;
 
   const normalizedWebsite =
-    website && !website.startsWith("http") ? `https://${website}` : website;
+    website && !website.startsWith('http') ? `https://${website}` : website;
 
   return (
     <div className="px-1">
@@ -58,7 +66,7 @@ export default function ExpandedDetails({
         className="w-full justify-between text-sm font-medium text-muted-foreground hover:text-foreground"
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        {isOpen ? "Hide Details" : "More Info"}
+        {isOpen ? 'Hide Details' : 'More Info'}
         <motion.span
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
@@ -72,7 +80,7 @@ export default function ExpandedDetails({
           <motion.div
             key="expanded-details"
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
+            animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={springs.gentle}
             className="overflow-hidden"
@@ -102,7 +110,9 @@ export default function ExpandedDetails({
               {(researchInterest || researchTopics) && (
                 <DetailBlock icon={FlaskConical} label="Research">
                   {researchInterest && (
-                    <p className="text-sm text-foreground">{stripHtml(researchInterest)}</p>
+                    <p className="text-sm text-foreground">
+                      {stripHtml(researchInterest)}
+                    </p>
                   )}
                   {researchTopics && (
                     <p className="text-sm text-foreground mt-1">
@@ -139,7 +149,7 @@ export default function ExpandedDetails({
                             className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline underline-offset-2 transition-colors"
                           >
                             {link.length > 40
-                              ? link.slice(0, 40) + "..."
+                              ? link.slice(0, 40) + '...'
                               : link}
                             <ExternalLink className="size-3" />
                           </a>

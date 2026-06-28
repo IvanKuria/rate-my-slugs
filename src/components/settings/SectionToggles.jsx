@@ -3,11 +3,31 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 
 const sectionItems = [
-  { key: 'campusInfo', label: 'Campus Directory Info', description: 'Photo, department, contact details' },
-  { key: 'rmpRatings', label: 'RateMyProfessors Ratings', description: 'Quality, difficulty, tags' },
-  { key: 'gradeDistribution', label: 'Grade Distribution', description: 'Historical grade charts' },
-  { key: 'reviews', label: 'Student Reviews', description: 'Review carousel with filters' },
-  { key: 'tags', label: 'Rating Tags', description: 'Top professor tags from RMP' },
+  {
+    key: 'campusInfo',
+    label: 'Campus Directory Info',
+    description: 'Photo, department, contact details',
+  },
+  {
+    key: 'rmpRatings',
+    label: 'RateMyProfessors Ratings',
+    description: 'Quality, difficulty, tags',
+  },
+  {
+    key: 'gradeDistribution',
+    label: 'Grade Distribution',
+    description: 'Historical grade charts',
+  },
+  {
+    key: 'reviews',
+    label: 'Student Reviews',
+    description: 'Review carousel with filters',
+  },
+  {
+    key: 'tags',
+    label: 'Rating Tags',
+    description: 'Top professor tags from RMP',
+  },
 ];
 
 export default function SectionToggles({ settings, onUpdate }) {
@@ -24,7 +44,9 @@ export default function SectionToggles({ settings, onUpdate }) {
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-sm font-medium">{item.label}</p>
-              <p className="text-xs text-muted-foreground">{item.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {item.description}
+              </p>
             </div>
             <Switch
               checked={settings.sections[item.key]}

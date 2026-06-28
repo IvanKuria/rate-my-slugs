@@ -8,7 +8,9 @@
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@wxt-dev/module-react": "^1.1.5",
+    "prettier": "^3.9.1",
     "tailwindcss": "^4.2.1",
     "wxt": "^0.20.13"
   }

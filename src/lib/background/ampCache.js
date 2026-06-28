@@ -4,10 +4,10 @@
  * UCSC Campus Directory.
  */
 
-import { getSettings } from "@/lib/storage/settings";
+import { getSettings } from '@/lib/storage/settings';
 
 // --- Constants ---
-const CAMPUS_DIRECTORY_BASE_URL = "https://campusdirectory.ucsc.edu/api/uid/";
+const CAMPUS_DIRECTORY_BASE_URL = 'https://campusdirectory.ucsc.edu/api/uid/';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_CACHE_DURATION_DAYS = 7;
 
@@ -37,13 +37,13 @@ async function fetchProfileFromAPI(uID) {
 
   if (!response.ok) {
     throw new Error(
-      `Campus directory request failed with status ${response.status}`,
+      `Campus directory request failed with status ${response.status}`
     );
   }
 
   const data = await response.json();
   if (!data) {
-    throw new Error("Campus directory returned empty payload");
+    throw new Error('Campus directory returned empty payload');
   }
 
   return data;
@@ -84,7 +84,7 @@ export async function fetchCachedCampusDirectoryProfile(uID) {
   } catch (error) {
     console.error(
       `Failed to fetch campus directory profile for ${uID}:`,
-      error.message,
+      error.message
     );
     await chrome.storage.local.remove(storageKey).catch(() => {});
     return { data: null, success: false };

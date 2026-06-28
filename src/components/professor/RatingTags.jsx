@@ -1,6 +1,6 @@
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 /**
  * Horizontal wrapped list of rating tag badges.
@@ -12,8 +12,8 @@ export default function RatingTags({ tags }) {
   return (
     <div className="flex flex-wrap gap-1.5 px-1">
       {tags.map((tag, i) => {
-        const label = typeof tag === "string" ? tag : tag?.tagName || tag?.name;
-        const count = typeof tag === "object" ? tag?.tagCount : null;
+        const label = typeof tag === 'string' ? tag : tag?.tagName || tag?.name;
+        const count = typeof tag === 'object' ? tag?.tagCount : null;
         if (!label) return null;
 
         return (
@@ -21,9 +21,9 @@ export default function RatingTags({ tags }) {
             key={i}
             variant="secondary"
             className={cn(
-              "text-[11px] font-medium px-2.5 py-1 rounded-lg",
-              "bg-secondary/50 text-secondary-foreground",
-              "hover:bg-secondary/70 transition-colors cursor-default"
+              'text-[11px] font-medium px-2.5 py-1 rounded-lg',
+              'bg-secondary/50 text-secondary-foreground',
+              'hover:bg-secondary/70 transition-colors cursor-default'
             )}
           >
             {label}

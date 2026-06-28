@@ -1,10 +1,10 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { fadeSlideIn } from "@/lib/animations";
-import { formatDate } from "@/utils/colors";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { fadeSlideIn } from '@/lib/animations';
+import { formatDate } from '@/utils/colors';
 
 /**
  * Single review card displaying class name, date, comment, and stat badges.
@@ -46,24 +46,27 @@ export default function ReviewItem({ review }) {
 
           {/* Comment */}
           <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-            {comment || "No written review provided."}
+            {comment || 'No written review provided.'}
           </p>
 
           {/* Stat badges */}
           <div className="flex flex-wrap gap-1.5">
-            {typeof helpfulRating === "number" && (
+            {typeof helpfulRating === 'number' && (
               <StatBadge label="Helpful" value={helpfulRating.toFixed(1)} />
             )}
-            {typeof clarityRating === "number" && (
+            {typeof clarityRating === 'number' && (
               <StatBadge label="Clarity" value={clarityRating.toFixed(1)} />
             )}
-            {typeof difficultyRating === "number" && (
-              <StatBadge label="Difficulty" value={difficultyRating.toFixed(1)} />
+            {typeof difficultyRating === 'number' && (
+              <StatBadge
+                label="Difficulty"
+                value={difficultyRating.toFixed(1)}
+              />
             )}
-            {typeof wouldTakeAgain === "boolean" && (
+            {typeof wouldTakeAgain === 'boolean' && (
               <StatBadge
                 label="Take again"
-                value={wouldTakeAgain ? "Yes" : "No"}
+                value={wouldTakeAgain ? 'Yes' : 'No'}
                 positive={wouldTakeAgain}
               />
             )}
@@ -79,9 +82,10 @@ function StatBadge({ label, value, positive }) {
     <Badge
       variant="outline"
       className={cn(
-        "text-[11px] font-medium px-2 py-0.5 rounded-md gap-1",
-        positive === true && "border-green-500/30 text-green-700 dark:text-green-400",
-        positive === false && "border-red-500/30 text-red-700 dark:text-red-400"
+        'text-[11px] font-medium px-2 py-0.5 rounded-md gap-1',
+        positive === true &&
+          'border-green-500/30 text-green-700 dark:text-green-400',
+        positive === false && 'border-red-500/30 text-red-700 dark:text-red-400'
       )}
     >
       <span className="text-muted-foreground">{label}:</span>

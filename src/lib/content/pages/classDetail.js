@@ -1,5 +1,15 @@
-import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
-import { createMountPoint, renderComponent, unmountComponent, isPlaceholderName } from '@/lib/content/shared/mountHelper';
+import {
+  getUIDFromJson,
+  fetchProfessorData,
+  fetchLocalResearchData,
+  fetchLocalClassesData,
+} from '@/lib/content/shared/professorResolver';
+import {
+  createMountPoint,
+  renderComponent,
+  unmountComponent,
+  isPlaceholderName,
+} from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
@@ -11,8 +21,9 @@ export const PAGE_CONFIG = {
   // container still matches on its own.
   // ASSUMPTION (needs live verification): class-detail group boxes contain an
   // MTG_INSTR or INSTR_LONG descendant. Uses :has(), supported in modern Chrome.
-  panelSelector: '[id*="SSR_CLSRCH_F_WK"], .PSGROUPBOXWBO:has([id*="MTG_INSTR"]), .PSGROUPBOXWBO:has([id*="INSTR_LONG"])',
-  processedClass: "rms-processed",
+  panelSelector:
+    '[id*="SSR_CLSRCH_F_WK"], .PSGROUPBOXWBO:has([id*="MTG_INSTR"]), .PSGROUPBOXWBO:has([id*="INSTR_LONG"])',
+  processedClass: 'rms-processed',
 };
 
 /**
@@ -50,11 +61,14 @@ export function extractProfName(panel) {
  */
 function extractCourseCode(panel) {
   // Try common class detail title patterns
-  const titleEl = panel.querySelector('[id*="DERIVED_CLSRCH_DESCR200"]') ||
-                  panel.querySelector('.PAGROUPDIVIDER') ||
-                  panel.querySelector('h2, h3');
+  const titleEl =
+    panel.querySelector('[id*="DERIVED_CLSRCH_DESCR200"]') ||
+    panel.querySelector('.PAGROUPDIVIDER') ||
+    panel.querySelector('h2, h3');
   if (titleEl) {
-    const match = titleEl.textContent.trim().match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
+    const match = titleEl.textContent
+      .trim()
+      .match(/([A-Z]{2,5})\s+(\d+[A-Z]?)/);
     if (match) return `${match[1]} ${match[2]}`;
   }
 
@@ -70,9 +84,11 @@ function extractCourseCode(panel) {
  * Mounts near the instructor element when possible.
  */
 export function getMountTarget(panel) {
-  return panel.querySelector('[id*="MTG_INSTR"]') ||
-         panel.querySelector('[id*="INSTR_LONG"]') ||
-         panel;
+  return (
+    panel.querySelector('[id*="MTG_INSTR"]') ||
+    panel.querySelector('[id*="INSTR_LONG"]') ||
+    panel
+  );
 }
 
 /**
@@ -111,48 +127,59 @@ export async function renderPage() {
     fetchLocalClassesData(),
   ]);
 
-  await Promise.allSettled(mounts.map(async ({ mount, name, panel, course }) => {
-    const uID = await getUIDFromJson(name);
+  await Promise.allSettled(
+    mounts.map(async ({ mount, name, panel, course }) => {
+      const uID = await getUIDFromJson(name);
 
-    let profileDict = null;
-    try {
-      profileDict = await fetchProfessorData(uID, name);
-    } catch (error) {
-      // silently continue — error is non-critical
-    }
-    if (profileDict?.data?.success === false) {
-      profileDict.data = null;
-    }
+      let profileDict = null;
+      try {
+        profileDict = await fetchProfessorData(uID, name);
+      } catch (error) {
+        // silently continue — error is non-critical
+      }
+      if (profileDict?.data?.success === false) {
+        profileDict.data = null;
+      }
 
-    let profData = null, rateMyProfessorData = null, reviews = [];
-    let researchTopicText = null, classesTaughtList = null, fullName = null;
+      let profData = null,
+        rateMyProfessorData = null,
+        reviews = [];
+      let researchTopicText = null,
+        classesTaughtList = null,
+        fullName = null;
 
-    if (profileDict) {
-      profData = profileDict.data;
-      rateMyProfessorData = profileDict.rateMyProfessor;
-      reviews = profileDict.reviews || [];
-      fullName = getFirst(profData?.cn);
-      researchTopicText = researchTopics[fullName];
-      classesTaughtList = classesTaught[fullName];
-    }
+      if (profileDict) {
+        profData = profileDict.data;
+        rateMyProfessorData = profileDict.rateMyProfessor;
+        reviews = profileDict.reviews || [];
+        fullName = getFirst(profData?.cn);
+        researchTopicText = researchTopics[fullName];
+        classesTaughtList = classesTaught[fullName];
+      }
 
-    if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
-      unmountComponent(mount);
-      mount.remove();
-      return;
-    }
+      if (
+        !profData &&
+        !rateMyProfessorData &&
+        !researchTopicText &&
+        !classesTaughtList
+      ) {
+        unmountComponent(mount);
+        mount.remove();
+        return;
+      }
 
-    renderComponent(mount, RatingBar, {
-      professorData: {
-        apiData: profData,
-        rateMyProfessor: rateMyProfessorData,
-        reviews,
-        localResearchTopic: researchTopicText,
-        localClassesTaught: classesTaughtList,
-        instructorName: name,
-        course,
-      },
-      loading: false,
-    });
-  }));
+      renderComponent(mount, RatingBar, {
+        professorData: {
+          apiData: profData,
+          rateMyProfessor: rateMyProfessorData,
+          reviews,
+          localResearchTopic: researchTopicText,
+          localClassesTaught: classesTaughtList,
+          instructorName: name,
+          course,
+        },
+        loading: false,
+      });
+    })
+  );
 }

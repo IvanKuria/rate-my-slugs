@@ -25,7 +25,12 @@ function handleBarClick(professorData) {
  */
 export default function RatingBar({ professorData, loading }) {
   if (loading) {
-    return <div className="rms-rating-bar-skeleton" aria-label="Loading professor rating..." />;
+    return (
+      <div
+        className="rms-rating-bar-skeleton"
+        aria-label="Loading professor rating..."
+      />
+    );
   }
 
   if (!professorData) {
@@ -36,12 +41,18 @@ export default function RatingBar({ professorData, loading }) {
 
   const numRatings = rateMyProfessor?.numRatings ?? 0;
   const hasRatings = numRatings > 0;
-  const overallRating = hasRatings ? (rateMyProfessor?.avgRatingRounded ?? null) : null;
-  const wouldTakeAgain = hasRatings ? (rateMyProfessor?.wouldTakeAgainPercentRounded ?? null) : null;
-  const ratingDisplay = overallRating != null ? Number(overallRating).toFixed(1) : null;
-  const againDisplay = wouldTakeAgain != null && wouldTakeAgain >= 0
-    ? `${Math.round(wouldTakeAgain)}%`
+  const overallRating = hasRatings
+    ? (rateMyProfessor?.avgRatingRounded ?? null)
     : null;
+  const wouldTakeAgain = hasRatings
+    ? (rateMyProfessor?.wouldTakeAgainPercentRounded ?? null)
+    : null;
+  const ratingDisplay =
+    overallRating != null ? Number(overallRating).toFixed(1) : null;
+  const againDisplay =
+    wouldTakeAgain != null && wouldTakeAgain >= 0
+      ? `${Math.round(wouldTakeAgain)}%`
+      : null;
 
   return (
     <div

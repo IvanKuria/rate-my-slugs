@@ -1,23 +1,28 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { fadeSlideIn } from "@/lib/animations";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { fadeSlideIn } from '@/lib/animations';
 
 /**
  * Professor identity header: avatar, name, department and division badges.
  */
-export default function ProfessorHeader({ name, department, division, photoSrc }) {
+export default function ProfessorHeader({
+  name,
+  department,
+  division,
+  photoSrc,
+}) {
   const initials = name
     ? name
-        .split(" ")
+        .split(' ')
         .filter(Boolean)
         .map((w) => w[0])
         .slice(0, 2)
-        .join("")
+        .join('')
         .toUpperCase()
-    : "?";
+    : '?';
 
   const showDivision =
     division &&

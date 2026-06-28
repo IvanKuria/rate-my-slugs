@@ -1,17 +1,17 @@
-import React, { useState, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { springs } from "@/lib/animations";
-import ReviewItem from "@/components/professor/ReviewItem";
+import React, { useState, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { springs } from '@/lib/animations';
+import ReviewItem from '@/components/professor/ReviewItem';
 
 /**
  * Review carousel with class filter dropdown, review counter,
  * and prev/next navigation with animated transitions.
  */
 export default function ReviewCarousel({ reviews }) {
-  const [selectedClass, setSelectedClass] = useState("ALL");
+  const [selectedClass, setSelectedClass] = useState('ALL');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -34,12 +34,12 @@ export default function ReviewCarousel({ reviews }) {
 
   const filteredReviews = useMemo(() => {
     const filtered =
-      selectedClass === "ALL"
+      selectedClass === 'ALL'
         ? allReviews
         : allReviews.filter((r) => r.className === selectedClass);
 
     // When showing all classes, cap at 10 if there are 10+ reviews
-    if (selectedClass === "ALL" && allReviews.length >= 10) {
+    if (selectedClass === 'ALL' && allReviews.length >= 10) {
       return filtered.slice(0, 10);
     }
     return filtered;
@@ -102,7 +102,9 @@ export default function ReviewCarousel({ reviews }) {
             >
               <option value="ALL">All</option>
               {uniqueClasses.map((cls) => (
-                <option key={cls} value={cls}>{cls}</option>
+                <option key={cls} value={cls}>
+                  {cls}
+                </option>
               ))}
             </select>
           </div>

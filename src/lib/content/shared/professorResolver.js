@@ -38,7 +38,7 @@ async function loadProfUids() {
  */
 export async function getUIDFromJson(name) {
   const data = await loadProfUids();
-  let uID = "jdoe";
+  let uID = 'jdoe';
   let value = data[name];
 
   if (!value) {
@@ -48,11 +48,11 @@ export async function getUIDFromJson(name) {
       //   "Last,F." / "Last,First"  -> split on comma
       //   "First Last" (no comma)   -> last whitespace token is the last name,
       //                                 first token's first letter is the initial
-      let targetLast = "";
-      let targetFirstInitial = "";
+      let targetLast = '';
+      let targetFirstInitial = '';
 
-      if (name.includes(",")) {
-        const nameParts = name.split(",");
+      if (name.includes(',')) {
+        const nameParts = name.split(',');
         if (nameParts.length >= 2) {
           targetLast = nameParts[0].trim().toLowerCase();
           targetFirstInitial = nameParts[1].trim().charAt(0).toLowerCase();
@@ -68,11 +68,13 @@ export async function getUIDFromJson(name) {
       if (targetLast && targetFirstInitial) {
         // The JSON keys are always in "Last,F." format.
         const matchKey = Object.keys(data).find((key) => {
-          const keyParts = key.split(",");
+          const keyParts = key.split(',');
           if (keyParts.length < 2) return false;
           const keyLast = keyParts[0].trim().toLowerCase();
           const keyFirstInitial = keyParts[1].trim().charAt(0).toLowerCase();
-          return targetLast === keyLast && targetFirstInitial === keyFirstInitial;
+          return (
+            targetLast === keyLast && targetFirstInitial === keyFirstInitial
+          );
         });
 
         if (matchKey) {
@@ -80,7 +82,7 @@ export async function getUIDFromJson(name) {
         }
       }
     } catch (err) {
-      console.error("Error during fuzzy matching:", err);
+      console.error('Error during fuzzy matching:', err);
     }
   }
 
@@ -89,7 +91,7 @@ export async function getUIDFromJson(name) {
     const uidMatch = stringValue.match(/uid=([\w-]+)/);
     if (uidMatch && uidMatch[1]) {
       uID = uidMatch[1];
-    } else if (!stringValue.includes("http")) {
+    } else if (!stringValue.includes('http')) {
       uID = stringValue;
     }
   }
@@ -102,7 +104,7 @@ export async function getUIDFromJson(name) {
  */
 export async function fetchProfessorData(uID, name) {
   return chrome.runtime.sendMessage({
-    action: "fetchProfessorData",
+    action: 'fetchProfessorData',
     ID: uID,
     name,
   });
@@ -113,14 +115,14 @@ export async function fetchProfessorData(uID, name) {
  */
 export async function fetchLocalResearchData() {
   if (researchCache) return researchCache;
-  const url = chrome.runtime.getURL("data/prof_research_topics.json");
+  const url = chrome.runtime.getURL('data/prof_research_topics.json');
   try {
     const response = await fetch(url);
     if (!response.ok) return {};
     researchCache = await response.json();
     return researchCache;
   } catch (e) {
-    console.error("Error loading research JSON:", e);
+    console.error('Error loading research JSON:', e);
     return {};
   }
 }
@@ -130,14 +132,14 @@ export async function fetchLocalResearchData() {
  */
 export async function fetchLocalClassesData() {
   if (classesCache) return classesCache;
-  const url = chrome.runtime.getURL("data/prof_classes.json");
+  const url = chrome.runtime.getURL('data/prof_classes.json');
   try {
     const response = await fetch(url);
     if (!response.ok) return {};
     classesCache = await response.json();
     return classesCache;
   } catch (e) {
-    console.error("Error loading classes JSON:", e);
+    console.error('Error loading classes JSON:', e);
     return {};
   }
 }

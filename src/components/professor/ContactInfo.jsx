@@ -1,7 +1,7 @@
-import React from "react";
-import { Mail, Phone } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Mail, Phone } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 /**
  * Contact info row: email (mailto link) and phone, with lucide icons.
@@ -17,8 +17,8 @@ export default function ContactInfo({ email, phone }) {
           <a
             href={`mailto:${email}`}
             className={cn(
-              "text-primary hover:underline underline-offset-2",
-              "truncate transition-colors"
+              'text-primary hover:underline underline-offset-2',
+              'truncate transition-colors'
             )}
           >
             {email}

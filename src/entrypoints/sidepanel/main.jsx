@@ -81,7 +81,9 @@ function SidePanel() {
 
       // 2) Direct read of the pending payload as a backup path.
       try {
-        const stored = await chrome.storage.session.get('pendingProfessor_latest');
+        const stored = await chrome.storage.session.get(
+          'pendingProfessor_latest'
+        );
         const pending = stored?.pendingProfessor_latest?.data ?? null;
         if (cancelled) return;
         if (pending) {
@@ -115,19 +117,16 @@ function SidePanel() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {professorData ? (
-        <ProfessorPanel {...professorData} />
-      ) : (
-        <EmptyState />
-      )}
+      {professorData ? <ProfessorPanel {...professorData} /> : <EmptyState />}
     </div>
   );
 }
 
 function EmptyState() {
-  const slugUrl = typeof chrome !== 'undefined' && chrome.runtime?.getURL
-    ? chrome.runtime.getURL('icons/sammy/sammy-128.jpg')
-    : null;
+  const slugUrl =
+    typeof chrome !== 'undefined' && chrome.runtime?.getURL
+      ? chrome.runtime.getURL('icons/sammy/sammy-128.jpg')
+      : null;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
@@ -142,7 +141,8 @@ function EmptyState() {
         Rate My Slugs
       </h2>
       <p className="text-sm text-muted-foreground max-w-[240px]">
-        Click a professor's rating bar on your enrollment page to view their details here.
+        Click a professor's rating bar on your enrollment page to view their
+        details here.
       </p>
       <button
         onClick={() => chrome.runtime.openOptionsPage()}

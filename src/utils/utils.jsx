@@ -37,7 +37,7 @@ export const getFirst = (value) => {
  * @returns {number|null} The valid number, or null if the input is invalid/infinite.
  */
 export const toNumber = (value) => {
-  const num = typeof value === "number" ? value : parseFloat(value);
+  const num = typeof value === 'number' ? value : parseFloat(value);
   return Number.isFinite(num) ? num : null;
 };
 
@@ -71,7 +71,7 @@ export const roundToOneDecimal = (value) => {
  * @returns {string} The formatted string or "N/A".
  */
 export const formatNumber = (num) => {
-  return num ? Number(num).toFixed(1) : "N/A";
+  return num ? Number(num).toFixed(1) : 'N/A';
 };
 
 /**
@@ -91,13 +91,13 @@ export function StarRating({ rating, numRatings }) {
   const totalStars = 5;
 
   // Decide color bucket
-  let colorClass = "";
+  let colorClass = '';
   if (safeRating <= 2) {
-    colorClass = "star-rating-low"; // red
+    colorClass = 'star-rating-low'; // red
   } else if (safeRating === 3) {
-    colorClass = "star-rating-mid"; // yellow
+    colorClass = 'star-rating-mid'; // yellow
   } else if (safeRating >= 4) {
-    colorClass = "star-rating-high"; // green
+    colorClass = 'star-rating-high'; // green
   }
 
   return (
@@ -111,7 +111,7 @@ export function StarRating({ rating, numRatings }) {
           <svg
             key={index}
             viewBox="0 0 24 24"
-            className={filled ? "star-filled" : "star-empty"}
+            className={filled ? 'star-filled' : 'star-empty'}
             xmlns="http://www.w3.org/2000/svg"
           >
             <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21 12 17.27z" />

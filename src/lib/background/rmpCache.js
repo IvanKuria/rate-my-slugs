@@ -4,12 +4,12 @@
  * Rate My Professors (RMP).
  */
 
-import Fuse from "fuse.js";
-import { getSettings } from "@/lib/storage/settings";
+import Fuse from 'fuse.js';
+import { getSettings } from '@/lib/storage/settings';
 
 // --- Constants ---
-const RATE_MY_PROFESSORS_ENDPOINT = "https://www.ratemyprofessors.com/graphql";
-const UCSC_SCHOOL_ID = "U2Nob29sLTEwNzg="; // Base64 encoded "School-1078"
+const RATE_MY_PROFESSORS_ENDPOINT = 'https://www.ratemyprofessors.com/graphql';
+const UCSC_SCHOOL_ID = 'U2Nob29sLTEwNzg='; // Base64 encoded "School-1078"
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_CACHE_DURATION_DAYS = 7;
 
@@ -151,10 +151,10 @@ function generateSearchVariants(name) {
   const variants = [];
 
   // Clean periods and extra whitespace
-  const clean = (s) => s.replace(/\./g, "").replace(/\s+/g, " ").trim();
+  const clean = (s) => s.replace(/\./g, '').replace(/\s+/g, ' ').trim();
 
-  if (trimmed.includes(",")) {
-    const [lastRaw, firstRaw] = trimmed.split(",", 2).map((p) => p.trim());
+  if (trimmed.includes(',')) {
+    const [lastRaw, firstRaw] = trimmed.split(',', 2).map((p) => p.trim());
     const last = clean(lastRaw);
     const first = clean(firstRaw);
 
@@ -178,15 +178,15 @@ function generateSearchVariants(name) {
     variants.push(last);
 
     // If hyphenated last name, also try without hyphen
-    if (last.includes("-")) {
-      variants.push(last.replace(/-/g, " "));
+    if (last.includes('-')) {
+      variants.push(last.replace(/-/g, ' '));
     }
   } else {
     // Already in "First Last" or similar format
     variants.push(clean(trimmed));
 
     // Also try last name only (last word)
-    const parts = clean(trimmed).split(" ");
+    const parts = clean(trimmed).split(' ');
     if (parts.length > 1) {
       const lastName = parts[parts.length - 1];
       variants.push(lastName);
@@ -206,34 +206,34 @@ function generateSearchVariants(name) {
  * (e.g. a bare last name with no comma and a single token).
  */
 function getInputFirstInitial(name) {
-  if (!name) return "";
+  if (!name) return '';
   const trimmed = String(name).trim();
-  if (!trimmed) return "";
+  if (!trimmed) return '';
 
-  const clean = (s) => s.replace(/\./g, "").replace(/\s+/g, " ").trim();
+  const clean = (s) => s.replace(/\./g, '').replace(/\s+/g, ' ').trim();
 
-  if (trimmed.includes(",")) {
-    const firstRaw = trimmed.split(",", 2)[1] || "";
+  if (trimmed.includes(',')) {
+    const firstRaw = trimmed.split(',', 2)[1] || '';
     const first = clean(firstRaw);
-    return first ? first.charAt(0).toLowerCase() : "";
+    return first ? first.charAt(0).toLowerCase() : '';
   }
 
-  const parts = clean(trimmed).split(" ").filter(Boolean);
+  const parts = clean(trimmed).split(' ').filter(Boolean);
   // Only treat as "First Last" when there are at least two tokens; a single
   // bare token is a last-name-only input with no known first initial.
   if (parts.length > 1) {
     return parts[0].charAt(0).toLowerCase();
   }
-  return "";
+  return '';
 }
 
 /**
  * Normalize a string for comparison: lowercase, letters only.
  */
 function normalize(value) {
-  return String(value || "")
+  return String(value || '')
     .toLowerCase()
-    .replace(/[^a-z]/g, "");
+    .replace(/[^a-z]/g, '');
 }
 
 // --- Matching ---
@@ -243,14 +243,14 @@ function normalize(value) {
  * Excludes rating tags to avoid polluting name matching.
  */
 function createNameTokens(node) {
-  const first = node?.firstName ? String(node.firstName).trim() : "";
-  const last = node?.lastName ? String(node.lastName).trim() : "";
+  const first = node?.firstName ? String(node.firstName).trim() : '';
+  const last = node?.lastName ? String(node.lastName).trim() : '';
   const tokens = [];
 
   if (first || last) {
-    const fullName = [first, last].filter(Boolean).join(" ");
-    const reversedName = [last, first].filter(Boolean).join(", ");
-    const initial = first ? first[0] : "";
+    const fullName = [first, last].filter(Boolean).join(' ');
+    const reversedName = [last, first].filter(Boolean).join(', ');
+    const initial = first ? first[0] : '';
 
     if (fullName) tokens.push(fullName);
     if (reversedName) tokens.push(reversedName);
@@ -304,8 +304,8 @@ export function selectBestRmpMatch(edges, name, options = {}) {
   if (inputInitial) {
     const filtered = allCandidates.filter(
       (c) =>
-        typeof c.firstName === "string" &&
-        c.firstName.trim().charAt(0).toLowerCase() === inputInitial,
+        typeof c.firstName === 'string' &&
+        c.firstName.trim().charAt(0).toLowerCase() === inputInitial
     );
     if (filtered.length > 0) {
       candidates = filtered;
@@ -321,9 +321,9 @@ export function selectBestRmpMatch(edges, name, options = {}) {
     threshold,
     ignoreLocation: true,
     keys: [
-      { name: "firstName", weight: 2 },
-      { name: "lastName", weight: 2 },
-      { name: "nameTokens", weight: 1 },
+      { name: 'firstName', weight: 2 },
+      { name: 'lastName', weight: 2 },
+      { name: 'nameTokens', weight: 1 },
     ],
   });
 
@@ -378,11 +378,11 @@ export function selectBestRmpMatch(edges, name, options = {}) {
 async function fetchRmpSearchResults(searchText, schoolId) {
   const response = await withConcurrencyLimit(() =>
     fetch(RATE_MY_PROFESSORS_ENDPOINT, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: "Basic dGVzdDp0ZXN0",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: 'Basic dGVzdDp0ZXN0',
       },
       body: JSON.stringify({
         query: RATE_MY_PROFESSORS_QUERY,
@@ -391,20 +391,20 @@ async function fetchRmpSearchResults(searchText, schoolId) {
           schoolID: schoolId || UCSC_SCHOOL_ID,
         },
       }),
-    }),
+    })
   );
 
   if (!response.ok) {
     throw new Error(
-      `RateMyProfessors request failed with status ${response.status}`,
+      `RateMyProfessors request failed with status ${response.status}`
     );
   }
 
   const payload = await response.json();
   if (payload?.errors?.length) {
     console.error(
-      "RateMyProfessors GraphQL errors:",
-      payload.errors.map((err) => err.message).join(", "),
+      'RateMyProfessors GraphQL errors:',
+      payload.errors.map((err) => err.message).join(', ')
     );
     return { edges: null, didFallback: false };
   }
@@ -444,7 +444,7 @@ async function searchWithFallback(name, schoolId) {
     try {
       const { edges, didFallback } = await fetchRmpSearchResults(
         variant,
-        schoolId,
+        schoolId
       );
 
       // The fetch resolved without throwing — a genuine search ran.
@@ -519,7 +519,7 @@ export async function fetchCachedRateMyProfessorData(uID, name, schoolId) {
 
       const { edges, didFallback, ok } = await searchWithFallback(
         name,
-        schoolId,
+        schoolId
       );
 
       // Only cache when a real search actually ran. A genuine "not found"
@@ -552,17 +552,18 @@ export async function fetchCachedRateMyProfessorData(uID, name, schoolId) {
  * Fetches professor reviews from RMP.
  */
 export async function fetchProfessorReviews(legacyId, limit = 10) {
-  const teacherNodeId = typeof btoa === "function"
-    ? btoa(`Teacher-${legacyId}`)
-    : Buffer.from(`Teacher-${legacyId}`).toString("base64");
+  const teacherNodeId =
+    typeof btoa === 'function'
+      ? btoa(`Teacher-${legacyId}`)
+      : Buffer.from(`Teacher-${legacyId}`).toString('base64');
 
   const response = await withConcurrencyLimit(() =>
     fetch(RATE_MY_PROFESSORS_ENDPOINT, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: "Basic dGVzdDp0ZXN0",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: 'Basic dGVzdDp0ZXN0',
       },
       body: JSON.stringify({
         query: TEACHER_RATINGS_QUERY,
@@ -571,7 +572,7 @@ export async function fetchProfessorReviews(legacyId, limit = 10) {
           first: limit,
         },
       }),
-    }),
+    })
   );
 
   if (!response.ok) {
@@ -582,7 +583,7 @@ export async function fetchProfessorReviews(legacyId, limit = 10) {
 
   if (data.errors) {
     throw new Error(
-      `GraphQL errors: ${data.errors.map((e) => e.message).join(", ")}`,
+      `GraphQL errors: ${data.errors.map((e) => e.message).join(', ')}`
     );
   }
 
@@ -591,7 +592,7 @@ export async function fetchProfessorReviews(legacyId, limit = 10) {
 
   return ratings.map((rating) => ({
     id: rating.id,
-    comment: rating.comment || "",
+    comment: rating.comment || '',
     createdAt: rating.date || null,
     helpfulRating: rating.helpfulRating ?? null,
     clarityRating: rating.clarityRating ?? null,

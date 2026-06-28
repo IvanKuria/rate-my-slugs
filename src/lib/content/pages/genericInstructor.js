@@ -1,11 +1,21 @@
-import { getUIDFromJson, fetchProfessorData, fetchLocalResearchData, fetchLocalClassesData } from '@/lib/content/shared/professorResolver';
-import { createMountPoint, renderComponent, unmountComponent, isPlaceholderName } from '@/lib/content/shared/mountHelper';
+import {
+  getUIDFromJson,
+  fetchProfessorData,
+  fetchLocalResearchData,
+  fetchLocalClassesData,
+} from '@/lib/content/shared/professorResolver';
+import {
+  createMountPoint,
+  renderComponent,
+  unmountComponent,
+  isPlaceholderName,
+} from '@/lib/content/shared/mountHelper';
 import { getFirst } from '@/utils/utils';
 import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {
   panelSelector: '[id*="INSTR_LONG"], [id*="MTG_INSTR"]',
-  processedClass: "rms-processed",
+  processedClass: 'rms-processed',
 };
 
 /**
@@ -71,48 +81,59 @@ export async function renderPage() {
     fetchLocalClassesData(),
   ]);
 
-  await Promise.allSettled(mounts.map(async ({ mount, name, panel }) => {
-    const uID = await getUIDFromJson(name);
+  await Promise.allSettled(
+    mounts.map(async ({ mount, name, panel }) => {
+      const uID = await getUIDFromJson(name);
 
-    let profileDict = null;
-    try {
-      profileDict = await fetchProfessorData(uID, name);
-    } catch (error) {
-      // silently continue — error is non-critical
-    }
-    if (profileDict?.data?.success === false) {
-      profileDict.data = null;
-    }
+      let profileDict = null;
+      try {
+        profileDict = await fetchProfessorData(uID, name);
+      } catch (error) {
+        // silently continue — error is non-critical
+      }
+      if (profileDict?.data?.success === false) {
+        profileDict.data = null;
+      }
 
-    let profData = null, rateMyProfessorData = null, reviews = [];
-    let researchTopicText = null, classesTaughtList = null, fullName = null;
+      let profData = null,
+        rateMyProfessorData = null,
+        reviews = [];
+      let researchTopicText = null,
+        classesTaughtList = null,
+        fullName = null;
 
-    if (profileDict) {
-      profData = profileDict.data;
-      rateMyProfessorData = profileDict.rateMyProfessor;
-      reviews = profileDict.reviews || [];
-      fullName = getFirst(profData?.cn);
-      researchTopicText = researchTopics[fullName];
-      classesTaughtList = classesTaught[fullName];
-    }
+      if (profileDict) {
+        profData = profileDict.data;
+        rateMyProfessorData = profileDict.rateMyProfessor;
+        reviews = profileDict.reviews || [];
+        fullName = getFirst(profData?.cn);
+        researchTopicText = researchTopics[fullName];
+        classesTaughtList = classesTaught[fullName];
+      }
 
-    if (!profData && !rateMyProfessorData && !researchTopicText && !classesTaughtList) {
-      unmountComponent(mount);
-      mount.remove();
-      return;
-    }
+      if (
+        !profData &&
+        !rateMyProfessorData &&
+        !researchTopicText &&
+        !classesTaughtList
+      ) {
+        unmountComponent(mount);
+        mount.remove();
+        return;
+      }
 
-    renderComponent(mount, RatingBar, {
-      professorData: {
-        apiData: profData,
-        rateMyProfessor: rateMyProfessorData,
-        reviews,
-        localResearchTopic: researchTopicText,
-        localClassesTaught: classesTaughtList,
-        instructorName: name,
-        course: null,
-      },
-      loading: false,
-    });
-  }));
+      renderComponent(mount, RatingBar, {
+        professorData: {
+          apiData: profData,
+          rateMyProfessor: rateMyProfessorData,
+          reviews,
+          localResearchTopic: researchTopicText,
+          localClassesTaught: classesTaughtList,
+          instructorName: name,
+          course: null,
+        },
+        loading: false,
+      });
+    })
+  );
 }

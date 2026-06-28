@@ -1,14 +1,30 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 
 const API_BASE_URL = 'https://rate-my-slugs-server.onrender.com';
 
 const GRADE_COLORS = {
-  'A+': '#22c55e', 'A': '#22c55e', 'A-': '#4ade80',
-  'B+': '#84cc16', 'B': '#a3e635', 'B-': '#bef264',
-  'C+': '#facc15', 'C': '#fbbf24', 'C-': '#f59e0b',
-  'D+': '#fb923c', 'D': '#f97316', 'D-': '#ea580c',
-  'F': '#ef4444'
+  'A+': '#22c55e',
+  A: '#22c55e',
+  'A-': '#4ade80',
+  'B+': '#84cc16',
+  B: '#a3e635',
+  'B-': '#bef264',
+  'C+': '#facc15',
+  C: '#fbbf24',
+  'C-': '#f59e0b',
+  'D+': '#fb923c',
+  D: '#f97316',
+  'D-': '#ea580c',
+  F: '#ef4444',
 };
 
 // ── Cache config ─────────────────────────────────────────────────────────────
@@ -35,7 +51,11 @@ const readCache = (key) =>
           return;
         }
         const entry = items?.[key];
-        if (entry && entry.timestamp && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+        if (
+          entry &&
+          entry.timestamp &&
+          Date.now() - entry.timestamp < CACHE_TTL_MS
+        ) {
           resolve(entry.data);
         } else {
           resolve(null);
@@ -117,7 +137,9 @@ const GradeDistribution = ({ instructorName, course }) => {
             setData(result);
             setStatus('success');
           } else {
-            setStatus(result.error === 'instructor_not_found' ? 'not_found' : 'no_data');
+            setStatus(
+              result.error === 'instructor_not_found' ? 'not_found' : 'no_data'
+            );
           }
           return;
         } catch (error) {
@@ -168,7 +190,8 @@ const GradeDistribution = ({ instructorName, course }) => {
       <div className="grade-dist-section">
         <h4 className="grade-dist-title">Grade Distribution</h4>
         <div className="grade-dist-empty">
-          No grade distribution data available for this instructor and course combination.
+          No grade distribution data available for this instructor and course
+          combination.
         </div>
       </div>
     );
@@ -179,20 +202,25 @@ const GradeDistribution = ({ instructorName, course }) => {
   const distributions = Array.isArray(rawDistributions) ? rawDistributions : [];
 
   // Get unique quarters and years for filters
-  const quarters = [...new Set(distributions.map(d => d.quarter))];
-  const years = [...new Set(distributions.map(d => d.year))].sort((a, b) => b - a);
+  const quarters = [...new Set(distributions.map((d) => d.quarter))];
+  const years = [...new Set(distributions.map((d) => d.year))].sort(
+    (a, b) => b - a
+  );
 
   // Filter distributions based on selection
-  const filteredDistributions = distributions.filter(d => {
-    if (selectedQuarter !== 'ALL' && d.quarter !== selectedQuarter) return false;
-    if (selectedYear !== 'ALL' && d.year !== parseInt(selectedYear)) return false;
+  const filteredDistributions = distributions.filter((d) => {
+    if (selectedQuarter !== 'ALL' && d.quarter !== selectedQuarter)
+      return false;
+    if (selectedYear !== 'ALL' && d.year !== parseInt(selectedYear))
+      return false;
     return true;
   });
 
   // Aggregate filtered data or use overall if showing all
-  const rawDisplayData = (selectedQuarter === 'ALL' && selectedYear === 'ALL')
-    ? aggregated
-    : aggregateFiltered(filteredDistributions);
+  const rawDisplayData =
+    selectedQuarter === 'ALL' && selectedYear === 'ALL'
+      ? aggregated
+      : aggregateFiltered(filteredDistributions);
 
   // Defensive defaults: the server may omit fields. Never iterate undefined.
   const displayData = {
@@ -204,26 +232,37 @@ const GradeDistribution = ({ instructorName, course }) => {
   };
 
   // Convert to chart format
-  const chartData = Object.entries(displayData.letterGrades).map(([grade, count]) => ({
-    grade,
-    count,
-    color: GRADE_COLORS[grade]
-  }));
+  const chartData = Object.entries(displayData.letterGrades).map(
+    ([grade, count]) => ({
+      grade,
+      count,
+      color: GRADE_COLORS[grade],
+    })
+  );
 
-  const totalLetterGrades = Object.values(displayData.letterGrades).reduce((a, b) => a + b, 0);
+  const totalLetterGrades = Object.values(displayData.letterGrades).reduce(
+    (a, b) => a + b,
+    0
+  );
 
   // Screen-reader summary of the (otherwise opaque) SVG bar chart.
-  const chartAriaSummary = chartData.length > 0
-    ? `Grade distribution: ${chartData
-        .map(({ grade, count }) => `${grade}, ${count} student${count === 1 ? '' : 's'}`)
-        .join('; ')}. Total ${totalLetterGrades} letter grades.`
-    : 'No grade distribution data to display.';
+  const chartAriaSummary =
+    chartData.length > 0
+      ? `Grade distribution: ${chartData
+          .map(
+            ({ grade, count }) =>
+              `${grade}, ${count} student${count === 1 ? '' : 's'}`
+          )
+          .join('; ')}. Total ${totalLetterGrades} letter grades.`
+      : 'No grade distribution data to display.';
 
   return (
     <div className="grade-dist-section">
       <header className="grade-dist-header">
         <h4 className="grade-dist-title">Grade Distribution</h4>
-        {data.course && <span className="grade-dist-course">{data.course}</span>}
+        {data.course && (
+          <span className="grade-dist-course">{data.course}</span>
+        )}
       </header>
 
       <div className="grade-dist-filters">
@@ -235,7 +274,11 @@ const GradeDistribution = ({ instructorName, course }) => {
             onChange={(e) => setSelectedQuarter(e.target.value)}
           >
             <option value="ALL">All</option>
-            {quarters.map(q => <option key={q} value={q}>{q}</option>)}
+            {quarters.map((q) => (
+              <option key={q} value={q}>
+                {q}
+              </option>
+            ))}
           </select>
         </div>
         <div className="grade-dist-filter">
@@ -246,7 +289,11 @@ const GradeDistribution = ({ instructorName, course }) => {
             onChange={(e) => setSelectedYear(e.target.value)}
           >
             <option value="ALL">All</option>
-            {years.map(y => <option key={y} value={y}>{y}</option>)}
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -257,15 +304,22 @@ const GradeDistribution = ({ instructorName, course }) => {
         </div>
       ) : (
         <>
-          <div className="grade-dist-chart" role="img" aria-label={chartAriaSummary}>
+          <div
+            className="grade-dist-chart"
+            role="img"
+            aria-label={chartAriaSummary}
+          >
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
                 <XAxis dataKey="grade" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
                   formatter={(value) => [
                     `${value} students (${((value / totalLetterGrades) * 100).toFixed(1)}%)`,
-                    'Count'
+                    'Count',
                   ]}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
@@ -280,11 +334,15 @@ const GradeDistribution = ({ instructorName, course }) => {
           <div className="grade-dist-stats">
             <div className="grade-dist-stat">
               <span className="grade-dist-stat-label">Avg GPA</span>
-              <span className="grade-dist-stat-value">{displayData.gpa?.toFixed(2) || 'N/A'}</span>
+              <span className="grade-dist-stat-value">
+                {displayData.gpa?.toFixed(2) || 'N/A'}
+              </span>
             </div>
             <div className="grade-dist-stat">
               <span className="grade-dist-stat-label">Total</span>
-              <span className="grade-dist-stat-value">{displayData.totalStudents} students</span>
+              <span className="grade-dist-stat-value">
+                {displayData.totalStudents} students
+              </span>
             </div>
           </div>
 
@@ -315,13 +373,27 @@ function aggregateFiltered(distributions) {
       letterGrades: distributions[0].letterGrades || {},
       otherGrades: distributions[0].otherGrades || {},
       totalStudents: distributions[0].totalStudents || 0,
-      gpa: distributions[0].gpa ?? null
+      gpa: distributions[0].gpa ?? null,
     };
   }
 
   const letterGrades = {};
   const otherGrades = {};
-  const gradeKeys = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+  const gradeKeys = [
+    'A+',
+    'A',
+    'A-',
+    'B+',
+    'B',
+    'B-',
+    'C+',
+    'C',
+    'C-',
+    'D+',
+    'D',
+    'D-',
+    'F',
+  ];
   const otherKeys = ['P', 'NP', 'S', 'U', 'I', 'W'];
 
   for (const key of gradeKeys) {
@@ -341,16 +413,25 @@ function aggregateFiltered(distributions) {
     }
   }
 
-  const totalStudents = Object.values(letterGrades).reduce((a, b) => a + b, 0) +
+  const totalStudents =
+    Object.values(letterGrades).reduce((a, b) => a + b, 0) +
     Object.values(otherGrades).reduce((a, b) => a + b, 0);
 
   // Calculate weighted GPA
   const gradePoints = {
-    'A+': 4.0, 'A': 4.0, 'A-': 3.7,
-    'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-    'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-    'D+': 1.3, 'D': 1.0, 'D-': 0.7,
-    'F': 0.0
+    'A+': 4.0,
+    A: 4.0,
+    'A-': 3.7,
+    'B+': 3.3,
+    B: 3.0,
+    'B-': 2.7,
+    'C+': 2.3,
+    C: 2.0,
+    'C-': 1.7,
+    'D+': 1.3,
+    D: 1.0,
+    'D-': 0.7,
+    F: 0.0,
   };
 
   let totalPoints = 0;
@@ -362,7 +443,8 @@ function aggregateFiltered(distributions) {
     }
   }
 
-  const gpa = gradeCount > 0 ? Math.round((totalPoints / gradeCount) * 100) / 100 : null;
+  const gpa =
+    gradeCount > 0 ? Math.round((totalPoints / gradeCount) * 100) / 100 : null;
 
   return { letterGrades, otherGrades, totalStudents, gpa };
 }

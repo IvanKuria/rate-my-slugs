@@ -36,8 +36,12 @@ async function fetchProfessorBundle(name, ID, rateMyProfSchoolId) {
       : Boolean(campusData);
 
   // rmpResult is now { edges, didFallback } or legacy array format
-  const rmpEdges = Array.isArray(rmpResult) ? rmpResult : rmpResult?.edges ?? null;
-  const didFallback = Array.isArray(rmpResult) ? false : rmpResult?.didFallback ?? false;
+  const rmpEdges = Array.isArray(rmpResult)
+    ? rmpResult
+    : (rmpResult?.edges ?? null);
+  const didFallback = Array.isArray(rmpResult)
+    ? false
+    : (rmpResult?.didFallback ?? false);
 
   const rateMyProfessorNode = selectBestRmpMatch(rmpEdges, name, {
     didFallback,
@@ -207,7 +211,8 @@ export default defineBackground(() => {
 
           const stored = await chrome.storage.session.get(keys);
           const pending =
-            (typeof tabId === 'number' && stored[`pendingProfessor_${tabId}`]) ||
+            (typeof tabId === 'number' &&
+              stored[`pendingProfessor_${tabId}`]) ||
             stored.pendingProfessor_latest ||
             null;
 
