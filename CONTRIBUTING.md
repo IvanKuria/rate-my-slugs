@@ -42,28 +42,39 @@ npm run zip        # packaged zip for distribution
 
 A Firefox target is also available with `npm run dev:firefox` and `npm run build:firefox`.
 
+The project is TypeScript. The Vite/WXT build does not type-check, so run the
+type checker and formatter separately:
+
+```bash
+npm run typecheck   # wxt prepare && tsc --noEmit (strict)
+npm run format      # Prettier over the tree
+```
+
+`typecheck` also runs in CI on every push and pull request.
+
 ## Project Structure
 
 ```
 src/
 ├── entrypoints/
-│   ├── background.js          # Service worker: API routing and caching
-│   ├── content.js             # Content script: page detection and rendering
-│   ├── sidepanel/             # Side panel UI (React)
-│   └── options/               # Settings page (React)
+│   ├── background.ts          # Service worker: API routing and caching
+│   ├── content.ts             # Content script: page detection and rendering
+│   ├── sidepanel/             # Side panel UI (React, main.tsx)
+│   └── options/               # Settings page (React, main.tsx)
 ├── components/
-│   ├── RatingBar.jsx          # Inline rating bar injected into host pages
-│   ├── SlugRating.jsx         # Slug icon rating visualization
-│   ├── GradeDistribution.jsx  # Grade distribution chart
+│   ├── RatingBar.tsx          # Inline rating bar injected into host pages
+│   ├── SlugRating.tsx         # Slug icon rating visualization
+│   ├── GradeDistribution.tsx  # Grade distribution chart
 │   ├── professor/             # Side panel professor components
 │   ├── settings/              # Settings page components
 │   └── ui/                    # Shared UI primitives (shadcn/ui)
 ├── lib/
-│   ├── background/            # Background service worker modules
-│   ├── content/              # Content script logic (pages, shared helpers)
+│   ├── background/            # Background modules (rmpCache, campusDirectoryCache, cacheConfig)
+│   ├── content/               # Content script logic (pages, shared helpers)
 │   ├── hooks/                 # React hooks (settings, theme)
-│   └── storage/               # Chrome storage wrappers
-├── utils/                     # Shared utilities (colors, helpers)
+│   ├── storage/               # Chrome storage wrappers
+│   └── *.ts                   # Shared helpers (colors, format, constants, logger, nameParsing, ...)
+├── types/                     # Shared TypeScript types (one source of truth per shape)
 └── assets/                    # CSS files
 ```
 
@@ -71,14 +82,16 @@ src/
 
 | File | Responsibility |
 |------|----------------|
-| `src/entrypoints/background.js` | Service worker entry. Routes messages and orchestrates API calls. |
-| `src/entrypoints/content.js` | Content script entry. Loads the right page module and mounts the UI. |
-| `src/lib/background/rmpCache.js` | Rate My Professors GraphQL search, name matching, and caching. |
-| `src/lib/background/ampCache.js` | UCSC Campus Directory API and caching. |
-| `src/lib/content/shared/pageDetector.js` | Detects which MyUCSC page the user is on. |
-| `src/lib/content/shared/professorResolver.js` | Resolves scraped names to professor data. |
-| `src/lib/content/shared/mountHelper.jsx` | Mounts React UI into host pages. |
-| `src/lib/content/pages/` | Per-page extraction and render logic, one module per page type. |
+| `src/types/` | Shared types for every cross-boundary shape (RMP, campus, grades, settings, the message protocol, page contracts). |
+| `src/entrypoints/background.ts` | Service worker entry. Routes messages and orchestrates API calls. |
+| `src/entrypoints/content.ts` | Content script entry. Loads the right page module and mounts the UI. |
+| `src/lib/background/rmpCache.ts` | Rate My Professors GraphQL search, name matching, and caching. |
+| `src/lib/background/campusDirectoryCache.ts` | UCSC Campus Directory API and caching. |
+| `src/lib/content/shared/pageDetector.ts` | Detects which MyUCSC page the user is on. |
+| `src/lib/content/shared/professorResolver.ts` | Resolves scraped names to professor data. |
+| `src/lib/content/shared/renderPipeline.ts` | Shared two-phase render flow used by every page module. |
+| `src/lib/content/shared/mountHelper.tsx` | Mounts React UI into host pages. |
+| `src/lib/content/pages/` | Per-page config + extraction, one thin module per page type. |
 | `wxt.config.ts` | Extension manifest, permissions, and build configuration. |
 
 ## Architecture
@@ -108,21 +121,25 @@ Render rating bar   -->  Cache in storage       -->  Reviews carousel
 
 ### Page Modules
 
-Each supported MyUCSC page has its own module under `src/lib/content/pages/`. A page module exports a small, consistent contract so the content script can load it generically:
+Each supported MyUCSC page has its own module under `src/lib/content/pages/`. A page module exports a small, consistent contract (the `PageModule` type in `src/types`) so the content script can load it generically:
 
-- `PAGE_CONFIG` describing the page
+- `PAGE_CONFIG` describing the page (selector + processed-marker class)
 - `extractProfName()` to read professor names from the DOM
 - `getMountTarget()` to find where the rating bar attaches
 - `renderPage()` to mount the UI
+
+The two-phase render flow (skeleton mount, then fetch and update) is shared in `renderPipeline.ts`, so each page module is small: it just declares its selector and extraction functions and delegates to `runRenderPipeline()`.
 
 ## Coding Guidelines
 
 ### Style
 
-- Functional React components with hooks.
+- TypeScript throughout, under `strict`. Keep `npm run typecheck` clean.
+- Reuse the shared types in `src/types` rather than redefining shapes; add a new type there when something crosses a module or process boundary.
+- Functional React components with hooks; type each component's props.
 - ES modules (`import` and `export`).
-- Plain JavaScript, no TypeScript. Use JSDoc where types add clarity.
 - Prefer small, focused functions over large multipurpose ones.
+- Code is formatted with Prettier (`npm run format`).
 
 ### Content Script CSS
 
@@ -146,13 +163,13 @@ The side panel and options page run in their own extension context, so they use 
 
 ### Adding Support for a New Page Type
 
-1. Create a new module in `src/lib/content/pages/`.
-2. Export `PAGE_CONFIG`, `extractProfName()`, `getMountTarget()`, and `renderPage()`.
-3. Register the page type in `src/lib/content/shared/pageDetector.js` and the loader map in `src/entrypoints/content.js`.
+1. Create a new module in `src/lib/content/pages/` exporting `PAGE_CONFIG`, `extractProfName()`, `getMountTarget()`, and a `renderPage()` that delegates to `runRenderPipeline()`.
+2. Add the page type to the `PageType` union in `src/types`.
+3. Register it in `src/lib/content/shared/pageDetector.ts` and the loader map in `src/entrypoints/content.ts`.
 
 ### Modifying the RMP Search
 
-All Rate My Professors logic lives in `src/lib/background/rmpCache.js`:
+All Rate My Professors logic lives in `src/lib/background/rmpCache.ts`:
 
 - `generateSearchVariants()` produces name variants from scraped names.
 - `searchWithFallback()` runs the cascading search strategy.
@@ -163,7 +180,7 @@ All Rate My Professors logic lives in `src/lib/background/rmpCache.js`:
 Before opening a pull request, confirm that:
 
 1. The change is focused. Keep unrelated edits in separate PRs.
-2. `npm run build` passes.
+2. `npm run typecheck` and `npm run build` both pass.
 3. You tested on at least one real UCSC enrollment page.
 4. Content script CSS stays prefixed with `rms-`.
 5. The PR description explains what changed and why.

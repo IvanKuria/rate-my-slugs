@@ -62,6 +62,7 @@ Click **Details** to open the side panel with the full professor profile, includ
 
 | Layer | Technology |
 |-------|-----------|
+| Language | [TypeScript](https://www.typescriptlang.org) (strict) |
 | Framework | [WXT](https://wxt.dev) (Vite-based extension framework) |
 | UI | React 18, Tailwind CSS, [shadcn/ui](https://ui.shadcn.com) |
 | Charts | [Recharts](https://recharts.org) |
