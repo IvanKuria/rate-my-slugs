@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { parseInstructorName } from '@/lib/nameParsing';
 import type {
   ProfUidsMap,
   ResearchTopicsMap,
@@ -51,38 +52,17 @@ export async function getUIDFromJson(name: string): Promise<string | null> {
 
   if (!value) {
     try {
-      // Derive the target last name + first initial from the input name.
-      // Two supported formats:
-      //   "Last,F." / "Last,First"  -> split on comma
-      //   "First Last" (no comma)   -> last whitespace token is the last name,
-      //                                 first token's first letter is the initial
-      let targetLast = '';
-      let targetFirstInitial = '';
-
-      if (name.includes(',')) {
-        const nameParts = name.split(',');
-        if (nameParts.length >= 2) {
-          targetLast = nameParts[0].trim().toLowerCase();
-          targetFirstInitial = nameParts[1].trim().charAt(0).toLowerCase();
-        }
-      } else {
-        const tokens = name.trim().split(/\s+/).filter(Boolean);
-        if (tokens.length >= 2) {
-          targetLast = tokens[tokens.length - 1].toLowerCase();
-          targetFirstInitial = tokens[0].charAt(0).toLowerCase();
-        }
-      }
+      // Derive the target last name + first initial from the scraped name and
+      // match it against the "Last,F."-formatted JSON keys.
+      const { last: targetLast, firstInitial: targetFirstInitial } =
+        parseInstructorName(name);
 
       if (targetLast && targetFirstInitial) {
-        // The JSON keys are always in "Last,F." format.
         const matchKey = Object.keys(data).find((key) => {
-          const keyParts = key.split(',');
-          if (keyParts.length < 2) return false;
-          const keyLast = keyParts[0].trim().toLowerCase();
-          const keyFirstInitial = keyParts[1].trim().charAt(0).toLowerCase();
-          return (
-            targetLast === keyLast && targetFirstInitial === keyFirstInitial
-          );
+          // The JSON keys are always in "Last,F." format; skip any without it.
+          if (!key.includes(',')) return false;
+          const { last, firstInitial } = parseInstructorName(key);
+          return last === targetLast && firstInitial === targetFirstInitial;
         });
 
         if (matchKey) {

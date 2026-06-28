@@ -10,6 +10,7 @@ import { getSettings } from '@/lib/storage/settings';
 import { logger } from '@/lib/logger';
 import { RMP_CACHE_PREFIX, UCSC_SCHOOL_ID } from '@/lib/constants';
 import { getCacheDurationMs } from '@/lib/background/cacheConfig';
+import { parseInstructorName } from '@/lib/nameParsing';
 import type {
   RmpEdge,
   RmpReview,
@@ -248,26 +249,7 @@ function generateSearchVariants(name: string | null | undefined): string[] {
  * (e.g. a bare last name with no comma and a single token).
  */
 function getInputFirstInitial(name: string | null | undefined): string {
-  if (!name) return '';
-  const trimmed = String(name).trim();
-  if (!trimmed) return '';
-
-  const clean = (s: string): string =>
-    s.replace(/\./g, '').replace(/\s+/g, ' ').trim();
-
-  if (trimmed.includes(',')) {
-    const firstRaw = trimmed.split(',', 2)[1] || '';
-    const first = clean(firstRaw);
-    return first ? first.charAt(0).toLowerCase() : '';
-  }
-
-  const parts = clean(trimmed).split(' ').filter(Boolean);
-  // Only treat as "First Last" when there are at least two tokens; a single
-  // bare token is a last-name-only input with no known first initial.
-  if (parts.length > 1) {
-    return parts[0].charAt(0).toLowerCase();
-  }
-  return '';
+  return parseInstructorName(name).firstInitial;
 }
 
 /**
