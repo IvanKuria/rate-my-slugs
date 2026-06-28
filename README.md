@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/icons/sammy/sammy-128.jpg" alt="Rate My Slugs icon" width="120" height="120" />
+<img src="assets/icon-rounded.png" alt="Rate My Slugs icon" width="120" height="120" />
 
 # Rate My Slugs
 
