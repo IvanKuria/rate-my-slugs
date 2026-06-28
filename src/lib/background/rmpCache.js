@@ -482,16 +482,6 @@ async function searchWithFallback(name, schoolId) {
   return { edges: null, didFallback: false, ok: anyCompleted };
 }
 
-/**
- * Fetches raw RMP data for a professor name using fallback strategies.
- * Exported for backward compatibility.
- */
-export async function fetchRateMyProfessorData(name, schoolId) {
-  if (!name) return null;
-  const { edges } = await searchWithFallback(name, schoolId);
-  return edges;
-}
-
 // In-flight de-dup: two simultaneous identical lookups share one promise
 // instead of both hitting storage + the network. Keyed by storageKey.
 const inFlightLookups = new Map();

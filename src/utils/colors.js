@@ -37,24 +37,6 @@ export function getDifficultyPalette(value) {
   return COLOR_PRESETS.bad;
 }
 
-export function getRatingColorClass(value) {
-  if (typeof value !== 'number') return '';
-  if (value >= 4.5) return 'text-rating-excellent';
-  if (value >= 4.0) return 'text-rating-good';
-  if (value >= 3.0) return 'text-rating-average';
-  if (value >= 2.0) return 'text-rating-poor';
-  return 'text-rating-bad';
-}
-
-export function getDifficultyColorClass(value) {
-  if (typeof value !== 'number') return '';
-  if (value >= 4.5) return 'text-rating-bad';
-  if (value >= 4.0) return 'text-rating-poor';
-  if (value >= 3.0) return 'text-rating-average';
-  if (value >= 2.0) return 'text-rating-good';
-  return 'text-rating-excellent';
-}
-
 export function formatDate(dateString) {
   if (!dateString) return 'Date unavailable';
   const date = new Date(dateString);
@@ -64,16 +46,4 @@ export function formatDate(dateString) {
     month: 'short',
     day: 'numeric',
   });
-}
-
-/**
- * Returns Tailwind classes for a rating value background.
- */
-export function getRatingBgClass(value) {
-  if (typeof value !== 'number') return 'bg-muted';
-  if (value >= 4.5) return 'bg-rating-excellent';
-  if (value >= 4.0) return 'bg-rating-good';
-  if (value >= 3.0) return 'bg-rating-average';
-  if (value >= 2.0) return 'bg-rating-poor';
-  return 'bg-rating-bad';
 }

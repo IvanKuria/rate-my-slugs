@@ -110,7 +110,7 @@ export default defineBackground(() => {
     // chrome.storage.session BEFORE opening the panel, so it survives a cold
     // panel load or an evicted worker. The push below is only a fast path —
     // storage is the source of truth, and the panel pulls it on mount via the
-    // 'panelReady' route (Route 6) and/or by reading storage directly.
+    // 'panelReady' route (Route 4) and/or by reading storage directly.
     if (message?.action === 'showProfessor') {
       const tabId = sender?.tab?.id;
 
@@ -167,69 +167,7 @@ export default defineBackground(() => {
       return true;
     }
 
-    // Route 3: Batch fetch multiple professors in parallel
-    if (message?.action === 'batchFetchProfessors') {
-      (async () => {
-        try {
-          const professors = message.professors ?? [];
-          const settings = await getSettings();
-          const rateMyProfSchoolId = message.rateMyProfSchoolId;
-
-          const results = await Promise.all(
-            professors.map(async (prof) => {
-              try {
-                const result = await fetchProfessorBundle(
-                  prof.name,
-                  prof.uID,
-                  rateMyProfSchoolId
-                );
-                return { name: prof.name, ...result };
-              } catch (err) {
-                console.error(`Error fetching data for ${prof.name}:`, err);
-                return {
-                  name: prof.name,
-                  data: null,
-                  campusSuccess: false,
-                  rateMyProfessor: null,
-                  reviews: [],
-                  error: err.message,
-                };
-              }
-            })
-          );
-
-          // Key the results by professor name
-          const resultsByName = {};
-          for (const result of results) {
-            resultsByName[result.name] = result;
-          }
-
-          sendResponse({ status: 'success', professors: resultsByName });
-        } catch (error) {
-          console.error('Error in batch fetch:', error);
-          sendResponse({ status: 'error', error: error.message });
-        }
-      })();
-
-      return true;
-    }
-
-    // Route 4: Legacy — campus data only
-    if (message?.ID && !message?.action) {
-      (async () => {
-        try {
-          const campusResponse = await fetchCachedCampusDirectoryProfile(message.ID);
-          sendResponse(campusResponse);
-        } catch (error) {
-          console.error(`Failed to fetch profile for ${message.ID}`, error);
-          sendResponse({ data: null, success: false });
-        }
-      })();
-
-      return true;
-    }
-
-    // Route 5: Clear cache
+    // Route 3: Clear cache
     if (message?.action === 'clearCache') {
       (async () => {
         try {
@@ -252,7 +190,7 @@ export default defineBackground(() => {
       return true;
     }
 
-    // Route 6: Panel handshake — the side panel announces it has mounted and
+    // Route 4: Panel handshake — the side panel announces it has mounted and
     // asks for any pending professor payload. The panel has no tab id of its
     // own, so we serve the generic `pendingProfessor_latest` key (or a
     // tab-scoped key if the panel was able to supply one). After delivering,
