@@ -8,13 +8,9 @@ import {
   getDifficultyPalette,
   buildCardStyle,
   formatDate,
-} from '@/utils/colors';
-import {
-  formatNumber,
-  roundToOneDecimal,
-  roundToWhole,
-  StarRating,
-} from '@/utils/utils';
+} from '@/lib/colors';
+import { formatNumber, roundToOneDecimal, roundToWhole } from '@/lib/format';
+import { StarRating } from '@/components/StarRating';
 import SlugRating from '@/components/SlugRating';
 
 /**

@@ -10,7 +10,7 @@ import {
   unmountComponent,
   isPlaceholderName,
 } from '@/lib/content/shared/mountHelper';
-import { getFirst } from '@/utils/utils';
+import { getFirst } from '@/lib/format';
 import RatingBar from '@/components/RatingBar';
 
 export const PAGE_CONFIG = {

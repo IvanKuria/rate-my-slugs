@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { fadeSlideIn } from '@/lib/animations';
-import { formatDate } from '@/utils/colors';
+import { formatDate } from '@/lib/colors';
 
 /**
  * Single review card displaying class name, date, comment, and stat badges.

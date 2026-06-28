@@ -2,6 +2,8 @@
  * Global type augmentations.
  */
 
+/// <reference types="chrome" />
+
 import type { Root } from 'react-dom/client';
 
 declare global {

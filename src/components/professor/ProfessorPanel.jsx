@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@/lib/hooks/useSettings';
 import { stagger, professorSwitch } from '@/lib/animations';
-import { getFirst } from '@/utils/utils';
+import { getFirst } from '@/lib/format';
 import ProfessorHeader from '@/components/professor/ProfessorHeader';
 import ContactInfo from '@/components/professor/ContactInfo';
 import ExpandedDetails from '@/components/professor/ExpandedDetails';

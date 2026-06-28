@@ -6,7 +6,7 @@
  * Supports side panel architecture for professor detail views.
  */
 
-import { fetchCachedCampusDirectoryProfile } from '@/lib/background/ampCache';
+import { fetchCachedCampusDirectoryProfile } from '@/lib/background/campusDirectoryCache';
 import {
   fetchCachedRateMyProfessorData,
   selectBestRmpMatch,

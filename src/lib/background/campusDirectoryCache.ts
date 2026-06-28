@@ -1,38 +1,24 @@
 /**
- * @file ampCache.js
- * Handles all data fetching and caching for the
- * UCSC Campus Directory.
+ * @file campusDirectoryCache.ts
+ * Handles all data fetching and caching for the UCSC Campus Directory.
  */
 
-import { getSettings } from '@/lib/storage/settings';
+import { getCacheDurationMs } from '@/lib/background/cacheConfig';
+import { CAMPUS_CACHE_PREFIX } from '@/lib/constants';
+import { logger } from '@/lib/logger';
+import type { CampusDirectoryResponse, CampusProfile } from '@/types';
 
-// --- Constants ---
 const CAMPUS_DIRECTORY_BASE_URL = 'https://campusdirectory.ucsc.edu/api/uid/';
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DEFAULT_CACHE_DURATION_DAYS = 7;
 
-/**
- * Resolves the cache freshness window (in ms) from the user's
- * cacheDurationDays setting, falling back to 7 days if missing/invalid.
- */
-async function getCacheDurationMs() {
-  let days = DEFAULT_CACHE_DURATION_DAYS;
-  try {
-    const settings = await getSettings();
-    const candidate = Number(settings?.cacheDurationDays);
-    if (Number.isFinite(candidate) && candidate > 0) {
-      days = candidate;
-    }
-  } catch {
-    // Fall back to default on any settings read failure
-  }
-  return days * MS_PER_DAY;
+interface CampusCacheEntry {
+  data: CampusDirectoryResponse;
+  timestamp: number;
 }
 
 /**
  * Fetches profile data directly from the campus directory API.
  */
-async function fetchProfileFromAPI(uID) {
+async function fetchProfileFromAPI(uID: string): Promise<CampusProfile> {
   const response = await fetch(`${CAMPUS_DIRECTORY_BASE_URL}${uID}`);
 
   if (!response.ok) {
@@ -41,7 +27,7 @@ async function fetchProfileFromAPI(uID) {
     );
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as CampusProfile | null;
   if (!data) {
     throw new Error('Campus directory returned empty payload');
   }
@@ -53,15 +39,17 @@ async function fetchProfileFromAPI(uID) {
  * A cached wrapper for the campus directory API.
  * Checks local storage for fresh data before fetching.
  */
-export async function fetchCachedCampusDirectoryProfile(uID) {
+export async function fetchCachedCampusDirectoryProfile(
+  uID: string | null | undefined
+): Promise<CampusDirectoryResponse> {
   if (!uID) {
     return { data: null, success: false };
   }
 
-  const storageKey = `amp_${uID}`;
+  const storageKey = `${CAMPUS_CACHE_PREFIX}${uID}`;
   try {
     const cache = await chrome.storage.local.get([storageKey]);
-    const cachedEntry = cache[storageKey];
+    const cachedEntry = cache[storageKey] as CampusCacheEntry | undefined;
     const now = Date.now();
     const cacheDurationMs = await getCacheDurationMs();
 
@@ -70,21 +58,23 @@ export async function fetchCachedCampusDirectoryProfile(uID) {
     }
 
     const apiData = await fetchProfileFromAPI(uID);
-
-    const apiResponse = { data: apiData, success: true };
+    const apiResponse: CampusDirectoryResponse = {
+      data: apiData,
+      success: true,
+    };
 
     await chrome.storage.local.set({
       [storageKey]: {
         data: apiResponse,
         timestamp: Date.now(),
-      },
+      } satisfies CampusCacheEntry,
     });
 
     return apiResponse;
   } catch (error) {
-    console.error(
+    logger.error(
       `Failed to fetch campus directory profile for ${uID}:`,
-      error.message
+      error instanceof Error ? error.message : error
     );
     await chrome.storage.local.remove(storageKey).catch(() => {});
     return { data: null, success: false };
