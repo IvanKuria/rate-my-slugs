@@ -44,30 +44,34 @@ export function deriveProfessorViewModel(
   data: ProfessorData
 ): ProfessorViewModel {
   const {
-    apiData,
+    campusProfile,
     rateMyProfessor: rmpNode,
     localClassesTaught,
     instructorName,
   } = data;
 
-  const name = getFirst(apiData?.cn) || instructorName || 'Unknown Professor';
-  const department = getFirst(apiData?.ucscpersonpubdepartmentnumber);
-  const division = getFirst(apiData?.ucscpersonpubdivision);
-  const email = getFirst(apiData?.mail);
-  const phone = getFirst(apiData?.telephonenumber);
-  const officeHours = getFirst(apiData?.ucscpersonpubofficehours);
-  const researchInterest = getFirst(apiData?.ucscpersonpubresearchinterest);
-  const courses = localClassesTaught || apiData?.ucscpersonpubfacultycourses;
+  const name =
+    getFirst(campusProfile?.cn) || instructorName || 'Unknown Professor';
+  const department = getFirst(campusProfile?.ucscpersonpubdepartmentnumber);
+  const division = getFirst(campusProfile?.ucscpersonpubdivision);
+  const email = getFirst(campusProfile?.mail);
+  const phone = getFirst(campusProfile?.telephonenumber);
+  const officeHours = getFirst(campusProfile?.ucscpersonpubofficehours);
+  const researchInterest = getFirst(
+    campusProfile?.ucscpersonpubresearchinterest
+  );
+  const courses =
+    localClassesTaught || campusProfile?.ucscpersonpubfacultycourses;
 
   // Photo: keep only a real uid-backed directory photo; the component applies
   // the default-avatar fallback (which needs chrome.runtime.getURL).
-  const photoURL = apiData?.jpegphoto;
+  const photoURL = campusProfile?.jpegphoto;
   const directoryPhoto =
     photoURL && (photoURL as string).includes('uid') ? photoURL : null;
 
   // Website (first token of the first value).
   let website: string | null = null;
-  const websiteField = apiData?.ucscpersonpubwebsite;
+  const websiteField = campusProfile?.ucscpersonpubwebsite;
   if (Array.isArray(websiteField) && websiteField.length > 0) {
     const raw = websiteField[0];
     if (typeof raw === 'string' && raw.trim()) {
@@ -79,7 +83,7 @@ export function deriveProfessorViewModel(
 
   // Publications.
   let publicationLinks: string[] = [];
-  const pubField = apiData?.ucscpersonpubselectedpublication;
+  const pubField = campusProfile?.ucscpersonpubselectedpublication;
   if (Array.isArray(pubField) && pubField.length > 0) {
     publicationLinks = extractLinks(pubField[0]);
   } else if (typeof pubField === 'string') {

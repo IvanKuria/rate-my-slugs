@@ -26,7 +26,7 @@ const GradeDistribution = lazy(() => import('@/components/GradeDistribution'));
  */
 export default function ProfessorPanel(data: ProfessorData) {
   const {
-    apiData,
+    campusProfile,
     rateMyProfessor,
     reviews,
     localResearchTopic,
@@ -35,7 +35,7 @@ export default function ProfessorPanel(data: ProfessorData) {
   } = data;
   const { settings, loading: settingsLoading } = useSettings();
 
-  if (!apiData && !rateMyProfessor) return null;
+  if (!campusProfile && !rateMyProfessor) return null;
 
   // Derive display data from raw API/LDAP/RMP fields.
   const vm = deriveProfessorViewModel(data);
@@ -136,7 +136,7 @@ export default function ProfessorPanel(data: ProfessorData) {
               </motion.div>
 
               {/* Campus Info section */}
-              {sections.campusInfo && apiData && (
+              {sections.campusInfo && campusProfile && (
                 <>
                   <motion.div variants={stagger.item} className="mb-2">
                     <ContactInfo email={email} phone={phone} />

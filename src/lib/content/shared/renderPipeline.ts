@@ -113,14 +113,6 @@ export async function runRenderPipeline(
       // Drop the { error } variant; only a successful bundle carries data.
       const bundle: ProfessorBundle | null =
         profileDict && !('error' in profileDict) ? profileDict : null;
-      // Some campus payloads nest a { success, data } wrapper under `data`; when
-      // the lookup failed, discard it. (Loose shape predating the typed bundle.)
-      if (
-        bundle &&
-        (bundle.data as { success?: unknown } | null)?.success === false
-      ) {
-        bundle.data = null;
-      }
 
       let profData: CampusProfile | null = null;
       let rateMyProfessorData: RmpTeacherNode | null = null;
@@ -129,7 +121,7 @@ export async function runRenderPipeline(
       let classesTaughtList: string[] | null = null;
 
       if (bundle) {
-        profData = bundle.data;
+        profData = bundle.campusProfile;
         rateMyProfessorData = bundle.rateMyProfessor;
         reviews = bundle.reviews || [];
         const fullName = getFirst(profData?.cn);
@@ -152,7 +144,7 @@ export async function runRenderPipeline(
       }
 
       const professorData: ProfessorData = {
-        apiData: profData,
+        campusProfile: profData,
         rateMyProfessor: rateMyProfessorData,
         reviews,
         localResearchTopic: researchTopicText,

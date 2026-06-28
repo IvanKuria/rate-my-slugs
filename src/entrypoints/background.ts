@@ -93,7 +93,7 @@ async function fetchProfessorBundle(
   }
 
   return {
-    data: campusData,
+    campusProfile: campusData,
     campusSuccess,
     rateMyProfessor: rateMyProfessorNode,
     reviews,
