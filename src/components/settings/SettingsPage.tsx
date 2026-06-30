@@ -97,6 +97,17 @@ export default function SettingsPage() {
       {/* Footer */}
       <div className="mt-8 text-center text-xs text-muted-foreground">
         <p>Rate My Slugs v2.0 — Made with care at UC Santa Cruz</p>
+        <p className="mt-1">
+          Made by{' '}
+          <a
+            href="https://www.linkedin.com/in/ivan-kuria-46ab68312/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-ucsc-blue hover:underline"
+          >
+            Ivan Kuria
+          </a>
+        </p>
         <a
           href="mailto:ikuria@ucsc.edu?subject=Rate My Slugs Feedback"
           className="text-ucsc-blue hover:underline mt-1 inline-block"

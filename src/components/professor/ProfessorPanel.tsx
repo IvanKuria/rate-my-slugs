@@ -214,10 +214,10 @@ export default function ProfessorPanel(data: ProfessorData) {
                   </motion.div>
                 )}
 
-              {/* Feedback link */}
+              {/* Feedback + maker credit */}
               <motion.div
                 variants={stagger.item}
-                className="flex justify-center pt-4 pb-6"
+                className="flex flex-col items-center gap-1.5 pt-4 pb-6"
               >
                 <a
                   href="mailto:ikuria@ucsc.edu?subject=Rate My Slugs Feedback"
@@ -228,6 +228,18 @@ export default function ProfessorPanel(data: ProfessorData) {
                   )}
                 >
                   Have feedback? Let me know
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/ivan-kuria-46ab68312/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    'text-xs text-muted-foreground',
+                    'hover:text-foreground transition-colors'
+                  )}
+                >
+                  Made by Ivan Kuria ·{' '}
+                  <span className="underline underline-offset-2">LinkedIn</span>
                 </a>
               </motion.div>
             </motion.div>
